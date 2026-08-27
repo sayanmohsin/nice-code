@@ -17,7 +17,7 @@ section reference so the recommendation can be reviewed when upstream guidance c
 ## Lifecycle
 
 Patterns move through `proposed`, `adopted`, `revised`, `deprecated`, or `rejected`. A proposed
-pattern must not be presented as a mandatory standard until its source and enforcement path are
+pattern must not be presented as a universal rule until its source and enforcement path are
 reviewed.
 
 ## Checkers

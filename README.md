@@ -22,7 +22,7 @@ checks, and project-specific tests.
 ## How it works
 
 ```text
-Public industry guidance
+Public engineering guidance
         ↓
 Nice Code patterns and source registry
         ↓
@@ -230,8 +230,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the lifecycle from proposed to adopte
 deprecated, or rejected.
 
 Review the source registry and run the monthly process in
-[`docs/monthly-audit.md`](docs/monthly-audit.md) before adopting changes. This keeps standards
-easy to improve without silently changing them or copying an entire external guide.
+[`docs/monthly-audit.md`](docs/monthly-audit.md) before adopting changes. This keeps the guidance
+easy to improve without silently changing it or copying an entire external guide.
 
 ## Sources
 

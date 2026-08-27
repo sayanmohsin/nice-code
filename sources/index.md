@@ -20,7 +20,7 @@ principles and links, not full copies of external documents.
 
 - Prefer official documentation maintained by the organization responsible for the technology.
 - Use public company guidance when it is specific, durable, and applicable outside that company.
-- Do not turn a one-off blog opinion into a standard without corroboration.
+- Do not turn a one-off blog opinion into project guidance without corroboration.
 - Record conflicts as an explicit project decision rather than silently blending incompatible rules.
 
 ## Pattern adoption metadata
