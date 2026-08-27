@@ -40,6 +40,15 @@ const testSecretReport = runChecks({ project: testSecretProject, mode: "all" });
 assert.equal(testSecretReport.findings[0].status, "REVIEW", "test-only credentials should be review findings");
 assert.equal(testSecretReport.findings[0].severity, "warning", "test-only credentials should not be critical");
 
+const placeholderProject = mkdtempSync(join(tmpdir(), "nice-code-placeholder-"));
+writeFileSync(join(placeholderProject, "docs.ts"), [
+  'const authToken = "<your-api-key>";',
+  'const exampleToken = "md_live_...";',
+  'const envToken = process.env.API_TOKEN;',
+].join("\n"));
+const placeholderReport = runChecks({ project: placeholderProject, mode: "all" });
+assert.equal(placeholderReport.findings.length, 0, "placeholders and environment references should be ignored");
+
 const workspaceProject = mkdtempSync(join(tmpdir(), "nice-code-workspace-"));
 writeFileSync(join(workspaceProject, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
 const workspaceApp = join(workspaceProject, "apps");

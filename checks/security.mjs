@@ -14,7 +14,7 @@ export const checks = [
       const results = [];
       const pattern = /(?:password|secret|token|api[_-]?key|access[_-]?token)\s*[:=]\s*["'][^"']{6,}["']/gi;
       for (const match of file.content.matchAll(pattern)) {
-        if (/example|placeholder|dummy|fake|fixture|test-secret|changeme|not-a-real/i.test(match[0])) {
+        if (isUnmistakablePlaceholder(match[0])) {
           continue;
         }
         const testLike = isTestLikePath(file.path);
@@ -26,3 +26,8 @@ export const checks = [
     },
   },
 ];
+
+function isUnmistakablePlaceholder(value) {
+  return /example|placeholder|dummy|fake|fixture|test-secret|changeme|not-a-real|\$\{|\.\.\.|<[^>]+>|your[-_ ]/i.test(value)
+    || /["'][^"']*\s+[^"']*["']/.test(value);
+}

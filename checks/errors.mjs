@@ -14,6 +14,7 @@ export const checks = [
       const results = [];
       const pattern = /catch\s*(?:\([^)]*\))?\s*\{\s*(?:\/\/[^\n]*\s*)?\}/g;
       for (const match of file.content.matchAll(pattern)) {
+        if (/(?:intentional|expected|optional|best[- ]effort|safe to ignore|not applicable)/i.test(match[0])) continue;
         const testLike = isTestLikePath(file.path);
         const result = finding(this, file, lineNumber(file.content, match.index), "Failure is discarded; classify, propagate, or document why ignoring it is safe.", testLike ? "REVIEW" : "FAIL");
         if (testLike) result.severity = "warning";
