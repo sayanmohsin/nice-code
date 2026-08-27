@@ -1,4 +1,4 @@
-import { finding, isCodeFile, lineNumber } from "./helpers.mjs";
+import { finding, isCodeFile, isTestLikePath, isToolingPath, lineNumber } from "./helpers.mjs";
 
 const source = "https://microsoft.github.io/rust-guidelines/guidelines/universal/";
 
@@ -16,7 +16,10 @@ export const checks = [
       const results = [];
       const pattern = /(?:console\.|logger\.|tracing::|log::|println!|eprintln!)[^\n]*(?:token|password|secret|authorization|api[_-]?key)/gi;
       for (const match of file.content.matchAll(pattern)) {
-        results.push(finding(this, file, lineNumber(file.content, match.index), "Log expression may expose a credential or sensitive value.", "FAIL"));
+        const testLike = isTestLikePath(file.path);
+        const result = finding(this, file, lineNumber(file.content, match.index), "Log expression may expose a credential or sensitive value.", testLike ? "REVIEW" : "FAIL");
+        if (testLike) result.severity = "warning";
+        results.push(result);
       }
       return results;
     },
@@ -31,6 +34,7 @@ export const checks = [
       if (!isCodeFile(file, [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".rs", ".go", ".dart"])) {
         return [];
       }
+      if (isTestLikePath(file.path) || isToolingPath(file.path)) return [];
       const results = [];
       const pattern = /(?:console\.(?:log|info|warn|error)|println!|eprintln!|fmt\.Println)\s*\(/g;
       for (const match of file.content.matchAll(pattern)) {

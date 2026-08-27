@@ -1,4 +1,4 @@
-import { finding, isCodeFile, lineNumber } from "./helpers.mjs";
+import { finding, isCodeFile, isTestLikePath, isToolingPath, lineNumber } from "./helpers.mjs";
 
 export const checks = [
   {
@@ -11,6 +11,7 @@ export const checks = [
       if (!isCodeFile(file, [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"])) {
         return [];
       }
+      if (isTestLikePath(file.path) || isToolingPath(file.path)) return [];
       const results = [];
       const pattern = /\.(?:filter|map|flatMap)\s*\([^\n]*\)\s*\.(?:filter|map|flatMap)\s*\(/g;
       for (const match of file.content.matchAll(pattern)) {

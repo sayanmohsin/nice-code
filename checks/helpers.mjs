@@ -26,6 +26,15 @@ export function isTestLikePath(path) {
     || /(?:\.test|\.spec)\.[^.]+$/i.test(path);
 }
 
+export function isToolingPath(path) {
+  return /(?:^|[\\/])(?:scripts?|tools?|bin|cli)(?:[\\/]|$)/i.test(path);
+}
+
+export function isLikelySetupPath(path) {
+  return /(?:^|[\\/])(?:setup|bootstrap|config|configs?|migrations?)(?:[\\/]|[-_.]|$)/i.test(path)
+    || /(?:^|[-_.])(?:setup|bootstrap|config|migration)(?:[-_.]|$)/i.test(path);
+}
+
 export function classifyPath(path) {
   if (isTestLikePath(path)) return "test";
   if (/(?:^|[\\/])(?:generated|gen|dist|build|coverage)(?:[\\/]|\.|$)/i.test(path)) return "generated";

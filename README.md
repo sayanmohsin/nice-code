@@ -85,6 +85,12 @@ standard manifest files. It scans supported source files and does not modify the
 | `--ci` | Changed-file scan plus available native project tools |
 | `--json` | Machine-readable report for CI artifacts and metrics |
 | `--format agent` | Compact, line-oriented findings for coding agents |
+| `--agent` | Alias for `--format agent` |
+| `--verbose` | Show all human-readable findings in a full scan |
+| `--include-review` | Include `REVIEW` findings in agent output |
+| `--status STATUS,...` | Filter output by `FAIL`, `WARN`, `REVIEW`, or `PASS` |
+| `--max-findings N` | Limit displayed or explicitly filtered findings |
+| `--new-only` | Show only findings not present in the supplied baseline |
 | `--color` / `--no-color` | Force or disable colors in human-readable output |
 | `--explain CHECK_ID` | Show the purpose, severity, and source for a check |
 
@@ -102,6 +108,12 @@ node scripts/check.mjs --project /path/to/project --ci
 
 # Compact output for an agent loop
 node scripts/check.mjs --project /path/to/project --changed --format agent
+
+# Equivalent agent shorthand
+node scripts/check.mjs --project /path/to/project --changed --agent
+
+# Keep agent context small and focused
+node scripts/check.mjs --project /path/to/project --all --agent --status FAIL,WARN --max-findings 20
 
 # Save an ephemeral report and summarize it
 node scripts/check.mjs --project /path/to/project --all --json > /tmp/nice-code-report.json

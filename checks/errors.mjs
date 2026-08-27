@@ -1,4 +1,4 @@
-import { finding, isCodeFile, lineNumber } from "./helpers.mjs";
+import { finding, isCodeFile, isTestLikePath, lineNumber } from "./helpers.mjs";
 
 export const checks = [
   {
@@ -14,7 +14,10 @@ export const checks = [
       const results = [];
       const pattern = /catch\s*(?:\([^)]*\))?\s*\{\s*(?:\/\/[^\n]*\s*)?\}/g;
       for (const match of file.content.matchAll(pattern)) {
-        results.push(finding(this, file, lineNumber(file.content, match.index), "Failure is discarded; classify, propagate, or document why ignoring it is safe.", "FAIL"));
+        const testLike = isTestLikePath(file.path);
+        const result = finding(this, file, lineNumber(file.content, match.index), "Failure is discarded; classify, propagate, or document why ignoring it is safe.", testLike ? "REVIEW" : "FAIL");
+        if (testLike) result.severity = "warning";
+        results.push(result);
       }
       return results;
     },

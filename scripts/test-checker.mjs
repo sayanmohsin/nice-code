@@ -62,5 +62,20 @@ assert.equal(jsonReport.findings[0].file, "bad.ts", "JSON findings should have s
 const agentOutput = execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--format", "agent"], { encoding: "utf8" });
 assert(agentOutput.startsWith("NICE_CODE status=PASS"), "agent output should start with a parseable summary");
 assert(agentOutput.includes("FAIL AP-SEC-001 bad.ts:2"), "agent output should include actionable finding lines");
+assert(!agentOutput.includes("REVIEW AP-LOG-002"), "agent output should omit review findings by default");
+
+const agentAliasOutput = execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--agent", "--include-review", "--max-findings", "10"], { encoding: "utf8" });
+assert(agentAliasOutput.includes("REVIEW AP-LOG-002"), "--agent should support explicit review findings");
+assert.equal(agentAliasOutput.split("\n").filter((line) => /^(FAIL|WARN|REVIEW) /.test(line)).length, 6, "agent output should respect max-findings");
+
+const filteredJson = JSON.parse(execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--status", "FAIL", "--format", "json"], { encoding: "utf8" }));
+assert(filteredJson.findings.every((finding) => finding.status === "FAIL"), "explicit JSON filters should filter findings");
+assert.equal(filteredJson.scanSummary.findings, report.findings.length, "filtered JSON should retain the complete scan summary");
+
+assert.throws(
+  () => execFileSync(process.execPath, [checkerPath, "--project", project, "--unknown"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }),
+  /status 2|Unknown option/,
+  "unknown options should fail with a useful error",
+);
 
 console.log(`Checker tests passed with ${report.findings.length} expected finding(s).`);

@@ -11,9 +11,24 @@ import { toSarif } from "./sarif.mjs";
 const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".rs", ".go", ".dart"]);
 const ignoredDirectories = new Set([".git", "node_modules", "target", "build", "dist", ".dart_tool", ".next"]);
 const checkerVersion = "0.1.0";
+const validStatuses = new Set(["PASS", "WARN", "REVIEW", "FAIL"]);
 
 function parseArgs(argv) {
-  const options = { mode: "changed", format: "text", ci: false, color: null, project: process.cwd(), explain: null, baseline: null, writeBaseline: null };
+  const options = {
+    mode: "changed",
+    format: "text",
+    ci: false,
+    color: null,
+    verbose: false,
+    includeReview: false,
+    status: null,
+    maxFindings: null,
+    newOnly: false,
+    project: process.cwd(),
+    explain: null,
+    baseline: null,
+    writeBaseline: null,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--all") options.mode = "all";
@@ -24,6 +39,24 @@ function parseArgs(argv) {
     }
     else if (argument === "--color") options.color = true;
     else if (argument === "--no-color") options.color = false;
+    else if (argument === "--verbose") options.verbose = true;
+    else if (argument === "--include-review") options.includeReview = true;
+    else if (argument === "--agent") options.format = "agent";
+    else if (argument === "--status") {
+      const value = argv[++index];
+      if (!value) throw new Error("--status requires a comma-separated status list");
+      const statuses = value.split(",").map((status) => status.trim().toUpperCase()).filter(Boolean);
+      if (statuses.length === 0 || statuses.some((status) => !validStatuses.has(status))) {
+        throw new Error("--status accepts PASS, WARN, REVIEW, and FAIL");
+      }
+      options.status = new Set(statuses);
+    }
+    else if (argument === "--max-findings") {
+      const value = Number(argv[++index]);
+      if (!Number.isInteger(value) || value < 1) throw new Error("--max-findings requires a positive integer");
+      options.maxFindings = value;
+    }
+    else if (argument === "--new-only") options.newOnly = true;
     else if (argument === "--json") options.format = "json";
     else if (argument === "--format") options.format = argv[++index];
     else if (argument === "--baseline") options.baseline = resolve(argv[++index]);
@@ -31,12 +64,15 @@ function parseArgs(argv) {
     else if (argument === "--project") options.project = resolve(argv[++index]);
     else if (argument === "--explain") options.explain = argv[++index];
     else if (argument === "--help" || argument === "-h") options.help = true;
+    else throw new Error(`Unknown option: ${argument}`);
   }
+  if (options.newOnly && !options.baseline) throw new Error("--new-only requires --baseline REPORT.json");
   return options;
 }
 
 function printHelp() {
   console.log("Usage: node scripts/check.mjs [--project PATH] [--changed|--all|--ci] [--format text|json|sarif|agent]");
+  console.log("       [--agent] [--verbose] [--include-review] [--status STATUS,...] [--max-findings N]");
   console.log("       add --color or --no-color to control interactive text colors");
   console.log("       node scripts/check.mjs --project PATH --baseline REPORT.json");
   console.log("       node scripts/check.mjs --project PATH --all --format json --write-baseline BASELINE.json");
@@ -173,7 +209,14 @@ export function runChecks({ project = process.cwd(), mode = "changed", baseline 
 }
 
 function main() {
-  const options = parseArgs(process.argv.slice(2));
+  let options;
+  try {
+    options = parseArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(`Nice Code: ${error.message}`);
+    process.exitCode = 2;
+    return;
+  }
   if (options.help) return printHelp();
   if (options.explain) {
     if (!explain(options.explain)) process.exitCode = 2;
@@ -206,19 +249,57 @@ function main() {
     report.exit.blocked = true;
     report.exit.reasons.push("native tool failure");
   }
+  const output = selectOutput(report, options);
   if (options.format === "json") {
-    console.log(JSON.stringify(report, null, 2));
+    console.log(JSON.stringify(output.report, null, 2));
   } else if (options.format === "sarif") {
-    console.log(JSON.stringify(toSarif(report), null, 2));
+    console.log(JSON.stringify(toSarif(output.report), null, 2));
   } else if (options.format === "agent") {
-    printAgentReport(report);
+    printAgentReport(report, output);
   } else {
-    printTextReport(report, options.color);
+    printTextReport(report, options.color, output);
   }
   if (report.exit.blocked) process.exitCode = 1;
 }
 
-function printTextReport(report, requestedColor) {
+function summarize(findings) {
+  return {
+    files: new Set(findings.map((item) => item.file)).size,
+    findings: findings.length,
+    pass: findings.filter((item) => item.status === "PASS").length,
+    warn: findings.filter((item) => item.status === "WARN").length,
+    review: findings.filter((item) => item.status === "REVIEW").length,
+    fail: findings.filter((item) => item.status === "FAIL").length,
+  };
+}
+
+function selectOutput(report, options) {
+  const source = options.newOnly ? report.newFindings : report.findings;
+  let findings = source;
+  if (options.status) findings = findings.filter((item) => options.status.has(item.status));
+  else if (options.format === "agent" && !options.includeReview) findings = findings.filter((item) => item.status === "FAIL" || item.status === "WARN");
+  const selectedCount = findings.length;
+  const defaultLimit = options.format === "text" && options.mode === "all" && !options.verbose ? 20 : null;
+  const limit = options.maxFindings ?? defaultLimit;
+  const displayedFindings = limit ? findings.slice(0, limit) : findings;
+  const filtered = options.newOnly || options.status || options.includeReview || options.maxFindings !== null;
+  const outputReport = filtered ? {
+    ...report,
+    findings: displayedFindings,
+    customFindings: displayedFindings,
+    newFindings: options.newOnly ? displayedFindings : report.newFindings,
+    scanSummary: report.summary,
+    summary: summarize(displayedFindings),
+  } : report;
+  return {
+    findings: displayedFindings,
+    selectedCount,
+    hiddenCount: Math.max(0, selectedCount - displayedFindings.length),
+    report: outputReport,
+  };
+}
+
+function printTextReport(report, requestedColor, output) {
   const useColor = requestedColor ?? (process.stdout.isTTY && !process.env.NO_COLOR && !process.env.CI);
   const ansi = useColor ? {
     reset: "\u001b[0m",
@@ -240,14 +321,25 @@ function printTextReport(report, requestedColor) {
   console.log(`${paint("dim", "Project:")} ${report.project}`);
   console.log(`${paint("dim", "Mode:")} ${report.mode} ${paint("dim", "| Files:")} ${report.summary.files} ${paint("dim", "| Findings:")} ${report.summary.findings}`);
   console.log("");
-  if (report.summary.findings === 0) {
+  if (output.selectedCount === 0) {
     console.log(`${paint("green", "✓")} No findings.`);
   } else {
     console.log("Findings:");
-    for (const item of report.findings) {
-      console.log(`  ${symbol(item.status)} ${status(item.status.padEnd(6))} ${paint("cyan", item.id)} ${item.file}:${item.line}`);
-      console.log(`           ${item.message}`);
+    const groups = new Map();
+    for (const item of output.findings) {
+      const key = `${item.status}:${item.id}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
     }
+    for (const [key, items] of groups) {
+      const [groupStatus, groupId] = key.split(":");
+      console.log(`  ${symbol(groupStatus)} ${status(groupStatus)} ${paint("cyan", groupId)} ${paint("dim", `(${items.length})`)}`);
+      for (const item of items) {
+        console.log(`    ${item.file}:${item.line}`);
+        console.log(`             ${item.message}`);
+      }
+    }
+    if (output.hiddenCount > 0) console.log(`  ${paint("dim", `... ${output.hiddenCount} more finding(s) hidden; use --verbose or --max-findings.`)}`);
   }
   if (report.tools.length > 0) {
     console.log("");
@@ -261,11 +353,12 @@ function printTextReport(report, requestedColor) {
     : `${paint("green", "✓")} Result: ${paint("green", "PASS")}`);
 }
 
-function printAgentReport(report) {
-  console.log(`NICE_CODE status=${report.exit.blocked ? "BLOCKED" : "PASS"} mode=${report.mode} files=${report.summary.files} findings=${report.summary.findings}`);
-  for (const item of report.findings) {
+function printAgentReport(report, output) {
+  console.log(`NICE_CODE status=${report.exit.blocked ? "BLOCKED" : "PASS"} mode=${report.mode} files=${report.summary.files} findings=${output.selectedCount} shown=${output.findings.length}`);
+  for (const item of output.findings) {
     console.log(`${item.status} ${item.id} ${item.file}:${item.line} severity=${item.severity} category=${item.category} :: ${item.message}`);
   }
+  if (output.hiddenCount > 0) console.log(`HIDDEN ${output.hiddenCount} use=--verbose-or---max-findings`);
   for (const tool of report.tools) {
     if (tool.status !== "PASS") console.log(`TOOL_${tool.status} ${tool.command} :: ${tool.output}`);
   }
