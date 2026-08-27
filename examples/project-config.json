@@ -1,0 +1,14 @@
+{
+  "profiles": ["default", "react"],
+  "ignore": ["generated/**", "vendor/**"],
+  "severity": {
+    "AP-PERF-001": "review"
+  },
+  "exceptions": [
+    {
+      "id": "AP-LOG-002",
+      "file": "scripts/seed.mjs",
+      "reason": "Short-lived local seed command; no production logging path."
+    }
+  ]
+}

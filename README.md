@@ -101,6 +101,27 @@ node scripts/metrics.mjs /tmp/nice-code-report.json
 therefore produces a report with zero scanned files. `--all` is opt-in so routine work does not
 scan an entire repository unnecessarily.
 
+Initialize an explicit project configuration without overwriting an existing one:
+
+```bash
+node scripts/init.mjs --project /path/to/project
+```
+
+The generated `.nice-code.json` supports `profiles`, path `ignore` patterns, per-check `severity`
+overrides, and precise `exceptions` with a required reason. See
+[`examples/project-config.json`](examples/project-config.json). Exceptions are intentionally
+specific; they do not disable a whole category.
+
+For GitHub code scanning or other SARIF consumers:
+
+```bash
+node scripts/check.mjs --project . --ci --format sarif > nice-code.sarif
+```
+
+Use `--baseline previous-report.json` when adopting Nice Code gradually. The report keeps all
+findings and records the number of new findings; CI blocks only new critical custom findings.
+See [`examples/github-actions.yml`](examples/github-actions.yml) for a starting point.
+
 ## Reading results
 
 ```text
@@ -169,6 +190,10 @@ skills directory. For Codex, the local destination is typically:
 The skill is supplemental. Project-local `AGENTS.md` files still define repository architecture,
 commands, boundaries, and exceptions.
 
+The CLI and skill are separate on purpose: the CLI produces repeatable evidence, while the skill
+helps an agent reason about context before and during a change. A project can use either one or
+both.
+
 ## Patterns
 
 Read the [pattern index](patterns/index.md) for the complete catalog. Current patterns include:
@@ -204,6 +229,10 @@ protects a higher-level behavior. Add positive, negative, and ambiguous fixtures
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the lifecycle from proposed to adopted, revised,
 deprecated, or rejected.
 
+Review the source registry and run the monthly process in
+[`docs/monthly-audit.md`](docs/monthly-audit.md) before adopting changes. This keeps standards
+easy to improve without silently changing them or copying an entire external guide.
+
 ## Sources
 
 The source registry is in [`sources/index.md`](sources/index.md). It currently references public
@@ -211,6 +240,13 @@ guidance from Microsoft, Google, React, Vercel, Airbnb, Dart, Go, AWS, and MDN.
 
 Nice Code summarizes and attributes external guidance; it does not reproduce complete third-party
 documents. Sources are reviewed and dated so upstream changes can be revisited deliberately.
+
+## Monthly audit
+
+Use [`docs/monthly-audit.md`](docs/monthly-audit.md) once a month to review sources, run deliberate
+full scans, compare findings with native tools, measure false positives, and decide whether a
+pattern should be adopted, revised, deprecated, or rejected. Detailed reports stay in local or CI
+artifacts; only a small trend summary should be committed when needed.
 
 ## License
 

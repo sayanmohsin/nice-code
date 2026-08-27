@@ -22,3 +22,20 @@ principles and links, not full copies of external documents.
 - Use public company guidance when it is specific, durable, and applicable outside that company.
 - Do not turn a one-off blog opinion into a standard without corroboration.
 - Record conflicts as an explicit project decision rather than silently blending incompatible rules.
+
+## Pattern adoption metadata
+
+This registry is the source of truth for lifecycle and enforcement metadata. Pattern documents hold
+the practical guidance; this table keeps review decisions easy to audit and update.
+
+| Pattern area | ID range | State | Technologies | Enforcement | Source sections | Last reviewed |
+| --- | --- | --- | --- | --- | --- | --- |
+| Logging and observability | AP-LOG | adopted | Rust, Go, TypeScript, Dart, web | automated + agent review | AWS Operational Excellence; Microsoft universal guidelines | 2026-08-26 |
+| Async and concurrency | AP-ASYNC | adopted | Rust, Go, TypeScript, Dart | automated + agent review | Vercel React performance; Microsoft performance guidelines | 2026-08-26 |
+| Error handling | AP-ERR | adopted | Rust, Go, TypeScript, Dart | automated + agent review | Go Code Review Comments; Google Engineering Practices | 2026-08-26 |
+| Security and secrets | AP-SEC | adopted | all supported ecosystems | automated + human decision | AWS Security Pillar; MDN security guidance | 2026-08-26 |
+| Testing and verification | AP-TEST | adopted | all supported ecosystems | automated + agent review | Google Engineering Practices | 2026-08-26 |
+| Performance measurement | AP-PERF | adopted | all supported ecosystems | agent review + human decision | MDN Web Performance; AWS Performance Efficiency | 2026-08-26 |
+
+Pattern IDs not listed above remain documented agent-review patterns until an executable check is
+adopted. A source section name is recorded at adoption time; source URLs remain the canonical link.

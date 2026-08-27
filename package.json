@@ -2,10 +2,14 @@
   "name": "nice-code",
   "private": true,
   "type": "module",
+  "bin": {
+    "nice-code": "scripts/check.mjs"
+  },
   "scripts": {
     "check": "node scripts/check.mjs --all --project .",
     "check:docs": "node scripts/check-docs.mjs",
     "metrics": "node scripts/metrics.mjs",
+    "init": "node scripts/init.mjs",
     "test": "node scripts/test-checker.mjs"
   }
 }

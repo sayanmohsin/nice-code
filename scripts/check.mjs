@@ -5,12 +5,14 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { checks } from "../checks/index.mjs";
 import { runNativeTools } from "./run-tools.mjs";
+import { applyConfig, isIgnored, loadConfig } from "./config.mjs";
+import { toSarif } from "./sarif.mjs";
 
 const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".rs", ".go", ".dart"]);
 const ignoredDirectories = new Set([".git", "node_modules", "target", "build", "dist", ".dart_tool", ".next"]);
 
 function parseArgs(argv) {
-  const options = { mode: "changed", json: false, ci: false, project: process.cwd(), explain: null };
+  const options = { mode: "changed", format: "text", ci: false, project: process.cwd(), explain: null, baseline: null };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--all") options.mode = "all";
@@ -19,7 +21,9 @@ function parseArgs(argv) {
       options.mode = "changed";
       options.ci = true;
     }
-    else if (argument === "--json") options.json = true;
+    else if (argument === "--json") options.format = "json";
+    else if (argument === "--format") options.format = argv[++index];
+    else if (argument === "--baseline") options.baseline = resolve(argv[++index]);
     else if (argument === "--project") options.project = resolve(argv[++index]);
     else if (argument === "--explain") options.explain = argv[++index];
     else if (argument === "--help" || argument === "-h") options.help = true;
@@ -28,7 +32,8 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log("Usage: node scripts/check.mjs [--project PATH] [--changed|--all|--ci] [--json]");
+  console.log("Usage: node scripts/check.mjs [--project PATH] [--changed|--all|--ci] [--format text|json|sarif]");
+  console.log("       node scripts/check.mjs --project PATH --baseline REPORT.json");
   console.log("       node scripts/check.mjs --explain CHECK_ID");
 }
 
@@ -75,11 +80,12 @@ function walk(directory, root, files = []) {
   return files;
 }
 
-function readFiles(project, mode) {
+function readFiles(project, mode, config) {
   const isStandardsRepository = existsSync(join(project, "patterns")) && existsSync(join(project, "sources"));
   const paths = mode === "all" ? walk(project, project) : gitFiles(project);
   return paths
     .filter((path) => !isStandardsRepository || !/^(checks|fixtures|scripts)\//.test(path))
+    .filter((path) => !isIgnored(config, path))
     .filter((path) => sourceExtensions.has(path.slice(path.lastIndexOf("."))))
     .map((path) => ({ path, absolutePath: join(project, path), content: readFileSync(join(project, path), "utf8") }));
 }
@@ -94,15 +100,29 @@ function explain(id) {
   return true;
 }
 
-export function runChecks({ project = process.cwd(), mode = "changed" } = {}) {
-  const files = readFiles(project, mode);
-  const findings = checks.flatMap((check) => files.flatMap((file) => check.run(file)));
+export function runChecks({ project = process.cwd(), mode = "changed", baseline = null } = {}) {
+  const config = loadConfig(project);
+  const files = readFiles(project, mode, config);
+  const findings = applyConfig(config, checks.flatMap((check) => files.flatMap((file) => check.run(file))));
+  const baselineFindings = baseline ? JSON.parse(readFileSync(baseline, "utf8")).findings ?? [] : [];
+  const baselineKeys = new Set(baselineFindings.map((item) => `${item.id}:${item.file}:${item.message}`));
+  const newFindings = findings.filter((item) => !baselineKeys.has(`${item.id}:${item.file}:${item.message}`));
   return {
     project,
     mode,
+    config: config.path ? ".nice-code.json" : null,
     detected: detectProject(project),
     filesScanned: files.map((file) => file.path),
     findings,
+    baseline: baseline ? {
+      path: baseline,
+      findings: baselineFindings.length,
+      newFindings: newFindings.length,
+      resolvedFindings: baselineFindings.filter((item) => !findings.some((current) => (
+        `${current.id}:${current.file}:${current.message}` === `${item.id}:${item.file}:${item.message}`
+      ))).length,
+    } : null,
+    newFindings,
     summary: {
       files: files.length,
       findings: findings.length,
@@ -123,8 +143,10 @@ function main() {
   }
   const report = runChecks(options);
   report.tools = options.ci ? runNativeTools(options.project) : [];
-  if (options.json) {
+  if (options.format === "json") {
     console.log(JSON.stringify(report, null, 2));
+  } else if (options.format === "sarif") {
+    console.log(JSON.stringify(toSarif(report), null, 2));
   } else {
     console.log(`Nice Code: ${report.project} (${report.mode})`);
     console.log(`Scanned ${report.summary.files} file(s); ${report.summary.findings} finding(s).`);
@@ -133,7 +155,8 @@ function main() {
     }
     console.log(`Summary: ${report.summary.fail} fail, ${report.summary.warn} warn, ${report.summary.review} review.`);
   }
-  if (options.mode === "changed" && (report.findings.some((item) => item.status === "FAIL" && item.severity === "critical") || report.tools.some((tool) => tool.status === "FAIL"))) {
+  const blockingFindings = report.baseline ? report.newFindings : report.findings;
+  if (options.mode === "changed" && (blockingFindings.some((item) => item.status === "FAIL" && item.severity === "critical") || report.tools.some((tool) => tool.status === "FAIL"))) {
     process.exitCode = 1;
   }
 }

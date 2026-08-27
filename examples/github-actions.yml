@@ -1,0 +1,31 @@
+name: Nice Code
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 3 1 * *"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the project tools
+        run: true
+      - name: Run Nice Code
+        run: node /path/to/nice-code/scripts/check.mjs --project . --ci --format sarif > nice-code.sarif
+      - name: Upload Nice Code results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: nice-code.sarif
