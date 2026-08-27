@@ -1,0 +1,31 @@
+name: Validate Nice Code
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  runtime:
+    name: ${{ matrix.runtime }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime: [node, bun]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: oven-sh/setup-bun@v2
+        if: matrix.runtime == 'bun'
+        with:
+          bun-version: latest
+      - name: Run tests
+        run: ${{ matrix.runtime }} scripts/test-checker.mjs
+      - name: Validate documentation
+        if: matrix.runtime == 'node'
+        run: node scripts/check-docs.mjs
+      - name: Validate package contents
+        if: matrix.runtime == 'node'
+        run: npm pack --dry-run

@@ -1,15 +1,37 @@
 {
   "name": "nice-code",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Source-backed engineering guardrails for reliable software development",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sayanmohsin/nice-code.git"
+  },
+  "homepage": "https://github.com/sayanmohsin/nice-code#readme",
+  "bugs": {
+    "url": "https://github.com/sayanmohsin/nice-code/issues"
+  },
+  "license": "MIT",
+  "keywords": ["engineering", "code-review", "cli", "static-analysis", "guardrails"],
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": ["checks/", "patterns/", "scripts/", "sources/", "SKILL.md", "README.md", "LICENSE"],
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "nice-code": "scripts/check.mjs"
   },
   "scripts": {
     "check": "node scripts/check.mjs --all --project .",
-    "check:docs": "node scripts/check-docs.mjs",
     "metrics": "node scripts/metrics.mjs",
     "init": "node scripts/init.mjs",
-    "test": "node scripts/test-checker.mjs"
+    "test": "node scripts/test-checker.mjs",
+    "check:bun": "bun scripts/check.mjs --all --project .",
+    "test:bun": "bun scripts/test-checker.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "pack:check": "npm pack --dry-run",
+    "benchmark": "node scripts/benchmark.mjs"
   }
 }

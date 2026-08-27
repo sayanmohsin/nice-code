@@ -42,13 +42,19 @@ architectural or performance property.
 
 ## Quick start
 
-Nice Code requires Node.js 20 or newer and has no runtime dependencies.
+Nice Code is developed with Bun, but the published CLI requires only Node.js 20 or newer and has
+no runtime dependencies. The implementation uses portable Node APIs, so Bun-only APIs are not
+required for npm users.
 
 From this repository:
 
 ```bash
 npm test
 npm run check:docs
+
+# Bun-first local validation
+bun run test:bun
+bun run check:bun
 ```
 
 Check another project for only changed and untracked source files:
@@ -96,6 +102,35 @@ node scripts/check.mjs --project /path/to/project --ci
 node scripts/check.mjs --project /path/to/project --all --json > /tmp/nice-code-report.json
 node scripts/metrics.mjs /tmp/nice-code-report.json
 ```
+
+## Bun and Node support
+
+Bun is the preferred local runtime for fast script and test execution:
+
+```bash
+bun scripts/test-checker.mjs
+bun scripts/check.mjs --project . --all
+```
+
+Node remains the compatibility baseline for the published executable:
+
+```bash
+node scripts/test-checker.mjs
+node scripts/check.mjs --project . --all
+```
+
+The CI matrix runs both runtimes. Nice Code does not use Bun-specific APIs, because users may
+install it with npm and run it through `npx` without Bun installed.
+
+Measure before making performance claims:
+
+```bash
+npm run benchmark
+```
+
+The benchmark compares the fixture scan under available runtimes. Filesystem work, Git, and
+external native tools may dominate the total time, so startup results are not a guarantee of
+end-to-end improvement.
 
 `--changed` reads the target Git diff against `HEAD` and includes untracked files. A clean project
 therefore produces a report with zero scanned files. `--all` is opt-in so routine work does not
@@ -247,6 +282,23 @@ Use [`docs/monthly-audit.md`](docs/monthly-audit.md) once a month to review sour
 full scans, compare findings with native tools, measure false positives, and decide whether a
 pattern should be adopted, revised, deprecated, or rejected. Detailed reports stay in local or CI
 artifacts; only a small trend summary should be committed when needed.
+
+## npm package
+
+The package is prepared for public npm distribution. Before a release, inspect the exact tarball:
+
+```bash
+npm run pack:check
+```
+
+After publication, users can run the CLI without cloning the repository:
+
+```bash
+npx nice-code --project . --changed
+bunx nice-code --project . --changed
+```
+
+Release publication should happen from trusted CI with npm provenance enabled where supported.
 
 ## License
 
