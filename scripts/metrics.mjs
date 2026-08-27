@@ -14,15 +14,16 @@ if (!reportPath) {
 }
 
 const report = JSON.parse(readFileSync(reportPath, "utf8"));
+const findings = report.customFindings ?? report.findings ?? [];
 const byCategory = {};
 const byId = {};
-for (const item of report.findings ?? []) {
+for (const item of findings) {
   byCategory[item.category] = (byCategory[item.category] ?? 0) + 1;
   byId[item.id] = (byId[item.id] ?? 0) + 1;
 }
 
-const total = report.findings?.length ?? 0;
-const review = report.findings?.filter((item) => item.status === "REVIEW").length ?? 0;
+const total = findings.length;
+const review = findings.filter((item) => item.status === "REVIEW").length;
 const standardsRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const patternCount = readdirSync(join(standardsRoot, "patterns")).filter((file) => file.endsWith(".md") && file !== "index.md").length;
 const checkedCategories = new Set(checks.map((check) => check.category));
@@ -33,7 +34,7 @@ console.log(JSON.stringify({
   findings: total,
   newFindings: report.baseline?.newFindings ?? total,
   resolvedFindings: report.baseline?.resolvedFindings ?? 0,
-  criticalFailures: report.findings?.filter((item) => item.status === "FAIL" && item.severity === "critical").length ?? 0,
+  criticalFailures: findings.filter((item) => item.status === "FAIL" && item.severity === "critical").length,
   byStatus: report.summary ?? {},
   byCategory,
   recurringPatternIds: Object.entries(byId).filter(([, count]) => count > 1).map(([id, count]) => ({ id, count })),

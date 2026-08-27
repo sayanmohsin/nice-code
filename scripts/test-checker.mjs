@@ -17,6 +17,8 @@ assert(ids.has("AP-ASYNC-001"), "likely sequential awaits should be reviewed");
 assert(ids.has("AP-PERF-001"), "chained collection passes should be reviewed");
 assert(!report.findings.some((finding) => finding.file === "good.ts"), "good fixture should be clean");
 assert(!report.findings.some((finding) => finding.file === "ambiguous.ts" && finding.id === "AP-ASYNC-001"), "dependent awaits should not be flagged as independent");
+assert(report.findings.find((finding) => finding.file === "bad.ts").fileClass === "production", "production findings should be classified");
+assert.equal(report.customFindings, report.findings, "custom findings should remain backwards-compatible");
 
 const configuredProject = mkdtempSync(join(tmpdir(), "nice-code-test-"));
 writeFileSync(join(configuredProject, ".nice-code.json"), JSON.stringify({

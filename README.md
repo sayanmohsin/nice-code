@@ -157,6 +157,17 @@ Use `--baseline previous-report.json` when adopting Nice Code gradually. The rep
 findings and records the number of new findings; CI blocks only new critical custom findings.
 See [`examples/github-actions.yml`](examples/github-actions.yml) for a starting point.
 
+Create a baseline intentionally:
+
+```bash
+node scripts/check.mjs --project . --all --format json --write-baseline .nice-code-baseline.json
+```
+
+JSON reports expose `customFindings`, `nativeTools`, `activeProfiles`, detected workspace packages,
+and a `fileClass` for each finding (`production`, `test`, `example`, `migration`, or `generated`).
+Native tools can be `PASS`, `FAIL`, or `SKIPPED`; a missing optional tool is not a Nice Code
+finding.
+
 ## Reading results
 
 ```text

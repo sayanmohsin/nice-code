@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { checks } from "../checks/index.mjs";
 import { runNativeTools } from "./run-tools.mjs";
@@ -12,7 +12,7 @@ const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", 
 const ignoredDirectories = new Set([".git", "node_modules", "target", "build", "dist", ".dart_tool", ".next"]);
 
 function parseArgs(argv) {
-  const options = { mode: "changed", format: "text", ci: false, project: process.cwd(), explain: null, baseline: null };
+  const options = { mode: "changed", format: "text", ci: false, project: process.cwd(), explain: null, baseline: null, writeBaseline: null };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--all") options.mode = "all";
@@ -24,6 +24,7 @@ function parseArgs(argv) {
     else if (argument === "--json") options.format = "json";
     else if (argument === "--format") options.format = argv[++index];
     else if (argument === "--baseline") options.baseline = resolve(argv[++index]);
+    else if (argument === "--write-baseline") options.writeBaseline = resolve(argv[++index]);
     else if (argument === "--project") options.project = resolve(argv[++index]);
     else if (argument === "--explain") options.explain = argv[++index];
     else if (argument === "--help" || argument === "-h") options.help = true;
@@ -34,6 +35,7 @@ function parseArgs(argv) {
 function printHelp() {
   console.log("Usage: node scripts/check.mjs [--project PATH] [--changed|--all|--ci] [--format text|json|sarif]");
   console.log("       node scripts/check.mjs --project PATH --baseline REPORT.json");
+  console.log("       node scripts/check.mjs --project PATH --all --format json --write-baseline BASELINE.json");
   console.log("       node scripts/check.mjs --explain CHECK_ID");
 }
 
@@ -75,6 +77,13 @@ function detectProject(project, config) {
     next: Boolean(dependencies.next),
     vite: Boolean(dependencies.vite),
     workspacePackages: packageJsons.filter((packageJson) => packageJson.name).map((packageJson) => packageJson.name),
+    profiles: [
+      "default",
+      ...(dependencies.typescript || has("tsconfig.json") ? ["typescript"] : []),
+      ...(dependencies.react || dependencies["react-native"] ? ["react"] : []),
+      ...(dependencies["@nestjs/core"] ? ["nestjs"] : []),
+      ...(dependencies.next || dependencies.astro || dependencies.svelte || dependencies.vite ? ["web"] : []),
+    ],
   };
 }
 
@@ -126,13 +135,15 @@ export function runChecks({ project = process.cwd(), mode = "changed", baseline 
   const baselineFindings = baseline ? JSON.parse(readFileSync(baseline, "utf8")).findings ?? [] : [];
   const baselineKeys = new Set(baselineFindings.map((item) => `${item.id}:${item.file}:${item.message}`));
   const newFindings = findings.filter((item) => !baselineKeys.has(`${item.id}:${item.file}:${item.message}`));
-  return {
+  const report = {
     project,
     mode,
     config: config.path ? ".nice-code.json" : null,
+    activeProfiles: config.profiles,
     detected: detectProject(project, config),
     filesScanned: files.map((file) => file.path),
     findings,
+    customFindings: findings,
     baseline: baseline ? {
       path: baseline,
       findings: baselineFindings.length,
@@ -151,6 +162,7 @@ export function runChecks({ project = process.cwd(), mode = "changed", baseline 
       fail: findings.filter((item) => item.status === "FAIL").length,
     },
   };
+  return report;
 }
 
 function main() {
@@ -162,6 +174,20 @@ function main() {
   }
   const report = runChecks(options);
   report.tools = options.ci ? runNativeTools(options.project) : [];
+  report.nativeTools = report.tools;
+  report.exit = {
+    blocked: false,
+    reasons: [],
+  };
+  if (options.writeBaseline) {
+    writeFileSync(options.writeBaseline, `${JSON.stringify({
+      schemaVersion: 1,
+      checkerVersion: "0.1.0",
+      createdAt: new Date().toISOString(),
+      project: report.project,
+      findings: report.findings,
+    }, null, 2)}\n`);
+  }
   if (options.format === "json") {
     console.log(JSON.stringify(report, null, 2));
   } else if (options.format === "sarif") {
@@ -175,7 +201,15 @@ function main() {
     console.log(`Summary: ${report.summary.fail} fail, ${report.summary.warn} warn, ${report.summary.review} review.`);
   }
   const blockingFindings = report.baseline ? report.newFindings : report.findings;
-  if (options.mode === "changed" && (blockingFindings.some((item) => item.status === "FAIL" && item.severity === "critical") || report.tools.some((tool) => tool.status === "FAIL"))) {
+  if (options.mode === "changed" && blockingFindings.some((item) => item.status === "FAIL" && item.severity === "critical")) {
+    report.exit.blocked = true;
+    report.exit.reasons.push("new critical custom finding");
+  }
+  if (options.mode === "changed" && report.tools.some((tool) => tool.status === "FAIL")) {
+    report.exit.blocked = true;
+    report.exit.reasons.push("native tool failure");
+  }
+  if (report.exit.blocked) {
     process.exitCode = 1;
   }
 }

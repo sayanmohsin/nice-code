@@ -26,20 +26,26 @@ function run(project, command, args) {
 
 export function runNativeTools(project) {
   const results = [];
-  if (existsSync(join(project, "Cargo.toml")) && available("cargo")) {
-    results.push(run(project, "cargo", ["fmt", "--all", "--check"]));
+  function addIfProject(manifest, command, args) {
+    if (!existsSync(join(project, manifest))) return;
+    results.push(available(command)
+      ? run(project, command, args)
+      : { command: [command, ...args].join(" "), status: "SKIPPED", output: `${command} is not installed` });
   }
-  if (existsSync(join(project, "tsconfig.json")) && existsSync(join(project, "node_modules/.bin/tsc"))) {
-    results.push(run(project, join(project, "node_modules/.bin/tsc"), ["--noEmit"]));
+  addIfProject("Cargo.toml", "cargo", ["fmt", "--all", "--check"]);
+  if (existsSync(join(project, "tsconfig.json"))) {
+    const command = join(project, "node_modules/.bin/tsc");
+    results.push(existsSync(command)
+      ? run(project, command, ["--noEmit"])
+      : { command: `${command} --noEmit`, status: "SKIPPED", output: "local TypeScript is not installed" });
   }
-  if (existsSync(join(project, "biome.json")) && existsSync(join(project, "node_modules/.bin/biome"))) {
-    results.push(run(project, join(project, "node_modules/.bin/biome"), ["check", "."]));
+  if (existsSync(join(project, "biome.json"))) {
+    const command = join(project, "node_modules/.bin/biome");
+    results.push(existsSync(command)
+      ? run(project, command, ["check", "."])
+      : { command: `${command} check .`, status: "SKIPPED", output: "local Biome is not installed" });
   }
-  if (existsSync(join(project, "go.mod")) && available("go")) {
-    results.push(run(project, "go", ["vet", "./..."]));
-  }
-  if (existsSync(join(project, "pubspec.yaml")) && available("dart")) {
-    results.push(run(project, "dart", ["analyze"]));
-  }
+  addIfProject("go.mod", "go", ["vet", "./..."]);
+  addIfProject("pubspec.yaml", "dart", ["analyze"]);
   return results;
 }

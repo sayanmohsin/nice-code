@@ -8,6 +8,7 @@ export function finding(check, file, line, message, status = "WARN") {
     file: file.path,
     line,
     message,
+    fileClass: classifyPath(file.path),
     source: check.source,
   };
 }
@@ -23,4 +24,12 @@ export function isCodeFile(file, extensions) {
 export function isTestLikePath(path) {
   return /(?:^|[\\/])(?:test|tests|spec|specs|fixtures?|examples?|__tests__|__fixtures__|mocks?)(?:[\\/]|\.|$)/i.test(path)
     || /(?:\.test|\.spec)\.[^.]+$/i.test(path);
+}
+
+export function classifyPath(path) {
+  if (isTestLikePath(path)) return "test";
+  if (/(?:^|[\\/])(?:generated|gen|dist|build|coverage)(?:[\\/]|\.|$)/i.test(path)) return "generated";
+  if (/(?:^|[\\/])(?:examples?|fixtures?)(?:[\\/]|\.|$)/i.test(path)) return "example";
+  if (/(?:^|[\\/])migrations?(?:[\\/]|\.|$)/i.test(path)) return "migration";
+  return "production";
 }
