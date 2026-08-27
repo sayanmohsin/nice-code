@@ -1,4 +1,4 @@
-import { finding, isCodeFile, lineNumber } from "./helpers.mjs";
+import { finding, isCodeFile, isTestLikePath, lineNumber } from "./helpers.mjs";
 
 export const checks = [
   {
@@ -14,10 +14,13 @@ export const checks = [
       const results = [];
       const pattern = /(?:password|secret|token|api[_-]?key|access[_-]?token)\s*[:=]\s*["'][^"']{6,}["']/gi;
       for (const match of file.content.matchAll(pattern)) {
-        if (/example|placeholder|dummy|test-secret/i.test(match[0])) {
+        if (/example|placeholder|dummy|fake|fixture|test-secret|changeme|not-a-real/i.test(match[0])) {
           continue;
         }
-        results.push(finding(this, file, lineNumber(file.content, match.index), "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", "FAIL"));
+        const testLike = isTestLikePath(file.path);
+        const result = finding(this, file, lineNumber(file.content, match.index), "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", testLike ? "REVIEW" : "FAIL");
+        if (testLike) result.severity = "warning";
+        results.push(result);
       }
       return results;
     },

@@ -19,3 +19,8 @@ export function lineNumber(content, index) {
 export function isCodeFile(file, extensions) {
   return extensions.some((extension) => file.path.endsWith(extension));
 }
+
+export function isTestLikePath(path) {
+  return /(?:^|[\\/])(?:test|tests|spec|specs|fixtures?|examples?|__tests__|__fixtures__|mocks?)(?:[\\/]|\.|$)/i.test(path)
+    || /(?:\.test|\.spec)\.[^.]+$/i.test(path);
+}

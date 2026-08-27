@@ -37,17 +37,32 @@ function printHelp() {
   console.log("       node scripts/check.mjs --explain CHECK_ID");
 }
 
-function detectProject(project) {
-  const has = (name) => existsSync(join(project, name));
-  let packageJson = {};
-  if (has("package.json")) {
-    try {
-      packageJson = JSON.parse(readFileSync(join(project, "package.json"), "utf8"));
-    } catch {
-      packageJson = {};
+function packageManifests(project, config) {
+  const manifests = [];
+  function visit(directory, depth) {
+    if (depth > 4 || isIgnored(config, relative(project, directory))) return;
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "tools") continue;
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) visit(path, depth + 1);
+      else if (entry.isFile() && entry.name === "package.json") manifests.push(path);
     }
   }
-  const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
+  visit(project, 0);
+  return manifests;
+}
+
+function detectProject(project, config) {
+  const has = (name) => existsSync(join(project, name));
+  const manifests = packageManifests(project, config);
+  const packageJsons = manifests.map((path) => {
+    try {
+      return JSON.parse(readFileSync(path, "utf8"));
+    } catch {
+      return {};
+    }
+  });
+  const dependencies = Object.assign({}, ...packageJsons.map((packageJson) => ({ ...packageJson.dependencies, ...packageJson.devDependencies })));
   return {
     rust: has("Cargo.toml"),
     go: has("go.mod"),
@@ -56,6 +71,10 @@ function detectProject(project) {
     react: Boolean(dependencies.react) || Boolean(dependencies["react-native"]),
     astro: Boolean(dependencies.astro),
     svelte: Boolean(dependencies.svelte),
+    nestjs: Boolean(dependencies["@nestjs/core"]),
+    next: Boolean(dependencies.next),
+    vite: Boolean(dependencies.vite),
+    workspacePackages: packageJsons.filter((packageJson) => packageJson.name).map((packageJson) => packageJson.name),
   };
 }
 
@@ -111,7 +130,7 @@ export function runChecks({ project = process.cwd(), mode = "changed", baseline 
     project,
     mode,
     config: config.path ? ".nice-code.json" : null,
-    detected: detectProject(project),
+    detected: detectProject(project, config),
     filesScanned: files.map((file) => file.path),
     findings,
     baseline: baseline ? {
