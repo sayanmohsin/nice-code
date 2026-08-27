@@ -25,8 +25,17 @@ writeFileSync(join(configuredProject, ".nice-code.json"), JSON.stringify({
 }));
 writeFileSync(join(configuredProject, "ignored.ts"), "const password = 'secret';\n");
 writeFileSync(join(configuredProject, "bad.ts"), "const password = 'secret';\n");
+writeFileSync(join(configuredProject, "auth.test.ts"), "const password = 'secret';\n");
 const configuredReport = runChecks({ project: configuredProject, mode: "all" });
-assert.equal(configuredReport.findings.length, 0, "config ignores and exceptions should be precise");
+assert.equal(configuredReport.findings.length, 1, "config ignores and exceptions should be precise");
+assert.equal(configuredReport.findings[0].file, "auth.test.ts", "ignored and excepted files should not produce findings");
+assert.equal(configuredReport.findings[0].status, "REVIEW", "test-only credentials should remain reviewable");
+
+const testSecretProject = mkdtempSync(join(tmpdir(), "nice-code-test-secret-"));
+writeFileSync(join(testSecretProject, "auth.test.ts"), "const password = 'secret';\n");
+const testSecretReport = runChecks({ project: testSecretProject, mode: "all" });
+assert.equal(testSecretReport.findings[0].status, "REVIEW", "test-only credentials should be review findings");
+assert.equal(testSecretReport.findings[0].severity, "warning", "test-only credentials should not be critical");
 
 const workspaceProject = mkdtempSync(join(tmpdir(), "nice-code-workspace-"));
 writeFileSync(join(workspaceProject, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
