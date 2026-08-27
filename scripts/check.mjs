@@ -10,9 +10,10 @@ import { toSarif } from "./sarif.mjs";
 
 const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".rs", ".go", ".dart"]);
 const ignoredDirectories = new Set([".git", "node_modules", "target", "build", "dist", ".dart_tool", ".next"]);
+const checkerVersion = "0.1.0";
 
 function parseArgs(argv) {
-  const options = { mode: "changed", format: "text", ci: false, project: process.cwd(), explain: null, baseline: null, writeBaseline: null };
+  const options = { mode: "changed", format: "text", ci: false, color: null, project: process.cwd(), explain: null, baseline: null, writeBaseline: null };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--all") options.mode = "all";
@@ -21,6 +22,8 @@ function parseArgs(argv) {
       options.mode = "changed";
       options.ci = true;
     }
+    else if (argument === "--color") options.color = true;
+    else if (argument === "--no-color") options.color = false;
     else if (argument === "--json") options.format = "json";
     else if (argument === "--format") options.format = argv[++index];
     else if (argument === "--baseline") options.baseline = resolve(argv[++index]);
@@ -33,7 +36,8 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log("Usage: node scripts/check.mjs [--project PATH] [--changed|--all|--ci] [--format text|json|sarif]");
+  console.log("Usage: node scripts/check.mjs [--project PATH] [--changed|--all|--ci] [--format text|json|sarif|agent]");
+  console.log("       add --color or --no-color to control interactive text colors");
   console.log("       node scripts/check.mjs --project PATH --baseline REPORT.json");
   console.log("       node scripts/check.mjs --project PATH --all --format json --write-baseline BASELINE.json");
   console.log("       node scripts/check.mjs --explain CHECK_ID");
@@ -131,11 +135,14 @@ function explain(id) {
 export function runChecks({ project = process.cwd(), mode = "changed", baseline = null } = {}) {
   const config = loadConfig(project);
   const files = readFiles(project, mode, config);
-  const findings = applyConfig(config, checks.flatMap((check) => files.flatMap((file) => check.run(file))));
+  const findings = applyConfig(config, checks.flatMap((check) => files.flatMap((file) => check.run(file))))
+    .sort((left, right) => left.file.localeCompare(right.file) || left.line - right.line || left.id.localeCompare(right.id));
   const baselineFindings = baseline ? JSON.parse(readFileSync(baseline, "utf8")).findings ?? [] : [];
   const baselineKeys = new Set(baselineFindings.map((item) => `${item.id}:${item.file}:${item.message}`));
   const newFindings = findings.filter((item) => !baselineKeys.has(`${item.id}:${item.file}:${item.message}`));
   const report = {
+    schemaVersion: 1,
+    checkerVersion,
     project,
     mode,
     config: config.path ? ".nice-code.json" : null,
@@ -175,6 +182,8 @@ function main() {
   const report = runChecks(options);
   report.tools = options.ci ? runNativeTools(options.project) : [];
   report.nativeTools = report.tools;
+  report.generatedAt = new Date().toISOString();
+  report.command = process.argv.slice(2);
   report.exit = {
     blocked: false,
     reasons: [],
@@ -188,18 +197,6 @@ function main() {
       findings: report.findings,
     }, null, 2)}\n`);
   }
-  if (options.format === "json") {
-    console.log(JSON.stringify(report, null, 2));
-  } else if (options.format === "sarif") {
-    console.log(JSON.stringify(toSarif(report), null, 2));
-  } else {
-    console.log(`Nice Code: ${report.project} (${report.mode})`);
-    console.log(`Scanned ${report.summary.files} file(s); ${report.summary.findings} finding(s).`);
-    for (const item of report.findings) {
-      console.log(`${item.status.padEnd(6)} ${item.id.padEnd(14)} ${item.file}:${item.line} ${item.message}`);
-    }
-    console.log(`Summary: ${report.summary.fail} fail, ${report.summary.warn} warn, ${report.summary.review} review.`);
-  }
   const blockingFindings = report.baseline ? report.newFindings : report.findings;
   if (options.mode === "changed" && blockingFindings.some((item) => item.status === "FAIL" && item.severity === "critical")) {
     report.exit.blocked = true;
@@ -209,9 +206,70 @@ function main() {
     report.exit.blocked = true;
     report.exit.reasons.push("native tool failure");
   }
-  if (report.exit.blocked) {
-    process.exitCode = 1;
+  if (options.format === "json") {
+    console.log(JSON.stringify(report, null, 2));
+  } else if (options.format === "sarif") {
+    console.log(JSON.stringify(toSarif(report), null, 2));
+  } else if (options.format === "agent") {
+    printAgentReport(report);
+  } else {
+    printTextReport(report, options.color);
   }
+  if (report.exit.blocked) process.exitCode = 1;
+}
+
+function printTextReport(report, requestedColor) {
+  const useColor = requestedColor ?? (process.stdout.isTTY && !process.env.NO_COLOR && !process.env.CI);
+  const ansi = useColor ? {
+    reset: "\u001b[0m",
+    dim: "\u001b[2m",
+    red: "\u001b[31m",
+    yellow: "\u001b[33m",
+    green: "\u001b[32m",
+    cyan: "\u001b[36m",
+    bold: "\u001b[1m",
+  } : Object.fromEntries(["reset", "dim", "red", "yellow", "green", "cyan", "bold"].map((key) => [key, ""]));
+  const paint = (color, text) => `${ansi[color]}${text}${ansi.reset}`;
+  const symbol = (status) => status === "FAIL" ? paint("red", "✕") : status === "WARN" || status === "REVIEW" ? paint("yellow", "!") : paint("green", "✓");
+  const status = (value) => {
+    const raw = value.trim();
+    return raw === "FAIL" ? paint("red", value) : raw === "WARN" || raw === "REVIEW" ? paint("yellow", value) : paint("green", value);
+  };
+
+  console.log(`${paint("bold", "Nice Code")} ${paint("dim", `v${checkerVersion}`)}`);
+  console.log(`${paint("dim", "Project:")} ${report.project}`);
+  console.log(`${paint("dim", "Mode:")} ${report.mode} ${paint("dim", "| Files:")} ${report.summary.files} ${paint("dim", "| Findings:")} ${report.summary.findings}`);
+  console.log("");
+  if (report.summary.findings === 0) {
+    console.log(`${paint("green", "✓")} No findings.`);
+  } else {
+    console.log("Findings:");
+    for (const item of report.findings) {
+      console.log(`  ${symbol(item.status)} ${status(item.status.padEnd(6))} ${paint("cyan", item.id)} ${item.file}:${item.line}`);
+      console.log(`           ${item.message}`);
+    }
+  }
+  if (report.tools.length > 0) {
+    console.log("");
+    console.log("Native tools:");
+    for (const tool of report.tools) console.log(`  ${tool.status === "PASS" ? paint("green", "✓") : paint("yellow", "!")} ${status(tool.status.padEnd(7))} ${tool.command}`);
+  }
+  console.log("");
+  console.log(`${paint("dim", "Summary:")} ${report.summary.fail} fail, ${report.summary.warn} warn, ${report.summary.review} review.`);
+  console.log(report.exit.blocked
+    ? `${paint("red", "✕")} Result: ${paint("red", "BLOCKED")} (${report.exit.reasons.join(", ")})`
+    : `${paint("green", "✓")} Result: ${paint("green", "PASS")}`);
+}
+
+function printAgentReport(report) {
+  console.log(`NICE_CODE status=${report.exit.blocked ? "BLOCKED" : "PASS"} mode=${report.mode} files=${report.summary.files} findings=${report.summary.findings}`);
+  for (const item of report.findings) {
+    console.log(`${item.status} ${item.id} ${item.file}:${item.line} severity=${item.severity} category=${item.category} :: ${item.message}`);
+  }
+  for (const tool of report.tools) {
+    if (tool.status !== "PASS") console.log(`TOOL_${tool.status} ${tool.command} :: ${tool.output}`);
+  }
+  if (report.exit.reasons.length > 0) console.log(`REASONS ${report.exit.reasons.join("; ")}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main();

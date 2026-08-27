@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -49,5 +50,17 @@ const workspaceReport = runChecks({ project: workspaceProject, mode: "all" });
 assert.equal(workspaceReport.detected.react, true, "workspace React dependency should be detected");
 assert.equal(workspaceReport.detected.nestjs, true, "workspace NestJS dependency should be detected");
 assert(workspaceReport.detected.workspacePackages.includes("workspace-app"), "workspace package should be listed");
+
+const checkerPath = join(process.cwd(), "scripts/check.mjs");
+const jsonOutput = execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--format", "json"], { encoding: "utf8" });
+const jsonReport = JSON.parse(jsonOutput);
+assert.equal(jsonReport.schemaVersion, 1, "JSON output should expose a schema version");
+assert.equal(jsonReport.checkerVersion, "0.1.0", "JSON output should expose the checker version");
+assert.equal(jsonReport.exit.blocked, false, "JSON output should include the computed exit state");
+assert.equal(jsonReport.findings[0].file, "bad.ts", "JSON findings should have stable file ordering");
+
+const agentOutput = execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--format", "agent"], { encoding: "utf8" });
+assert(agentOutput.startsWith("NICE_CODE status=PASS"), "agent output should start with a parseable summary");
+assert(agentOutput.includes("FAIL AP-SEC-001 bad.ts:2"), "agent output should include actionable finding lines");
 
 console.log(`Checker tests passed with ${report.findings.length} expected finding(s).`);

@@ -84,6 +84,8 @@ standard manifest files. It scans supported source files and does not modify the
 | `--all` | Explicit deeper scan of supported source files |
 | `--ci` | Changed-file scan plus available native project tools |
 | `--json` | Machine-readable report for CI artifacts and metrics |
+| `--format agent` | Compact, line-oriented findings for coding agents |
+| `--color` / `--no-color` | Force or disable colors in human-readable output |
 | `--explain CHECK_ID` | Show the purpose, severity, and source for a check |
 
 Examples:
@@ -97,6 +99,9 @@ node scripts/check.mjs --explain AP-LOG-001
 
 # CI-oriented check
 node scripts/check.mjs --project /path/to/project --ci
+
+# Compact output for an agent loop
+node scripts/check.mjs --project /path/to/project --changed --format agent
 
 # Save an ephemeral report and summarize it
 node scripts/check.mjs --project /path/to/project --all --json > /tmp/nice-code-report.json
@@ -163,8 +168,14 @@ Create a baseline intentionally:
 node scripts/check.mjs --project . --all --format json --write-baseline .nice-code-baseline.json
 ```
 
-JSON reports expose `customFindings`, `nativeTools`, `activeProfiles`, detected workspace packages,
-and a `fileClass` for each finding (`production`, `test`, `example`, `migration`, or `generated`).
+JSON reports expose `schemaVersion`, `checkerVersion`, `customFindings`, `nativeTools`, `activeProfiles`,
+detected workspace packages, stable `exit` information, and a `fileClass` for each finding
+(`production`, `test`, `example`, `migration`, or `generated`). Findings are sorted by file, line, and
+check ID so consumers can compare reports consistently. `--format agent` omits JSON decoration and
+prints one actionable finding per line, which is suitable for an agent to parse without loading the
+full pattern library. Human-readable output uses colors and symbols when attached to a terminal;
+colors are disabled automatically for CI, redirected output, and `NO_COLOR`. Use `--color` or
+`--no-color` to override that behavior.
 Native tools can be `PASS`, `FAIL`, or `SKIPPED`; a missing optional tool is not a Nice Code
 finding.
 
