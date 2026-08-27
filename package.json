@@ -1,0 +1,11 @@
+{
+  "name": "nice-code",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check.mjs --all --project .",
+    "check:docs": "node scripts/check-docs.mjs",
+    "metrics": "node scripts/metrics.mjs",
+    "test": "node scripts/test-checker.mjs"
+  }
+}
