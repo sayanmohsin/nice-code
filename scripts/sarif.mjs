@@ -15,13 +15,34 @@ export function toSarif(report) {
     } }],
     properties: { status: item.status, severity: item.severity, category: item.category },
   }));
+  const nativeFailures = (report.nativeTools ?? report.tools ?? []).filter((tool) => tool.status === "FAIL");
+  for (const tool of nativeFailures) {
+    results.push({
+      ruleId: "NATIVE-TOOL-FAILURE",
+      level: "error",
+      message: { text: `${tool.command}: ${tool.output}` },
+      properties: { status: tool.status, command: tool.command },
+    });
+  }
+  if (nativeFailures.length > 0) {
+    rules.push({
+      id: "NATIVE-TOOL-FAILURE",
+      name: "Native project tool failure",
+      shortDescription: { text: "A configured compiler, formatter, or analyzer failed." },
+    });
+  }
   return {
     version: "2.1.0",
     $schema: "https://json.schemastore.org/sarif-2.1.0.json",
     runs: [{
       tool: { driver: { name: "Nice Code", informationUri: "https://github.com/sayanmohsin/nice-code", rules } },
       results,
-      properties: { project: report.project, mode: report.mode },
+      properties: {
+        project: report.project,
+        mode: report.mode,
+        nativeTools: report.nativeTools ?? report.tools ?? [],
+        exit: report.exit ?? { blocked: false, reasons: [] },
+      },
     }],
   };
 }
