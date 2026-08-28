@@ -32,6 +32,9 @@
     "test:bun": "bun scripts/test-checker.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "pack:check": "npm pack --dry-run",
-    "benchmark": "node scripts/benchmark.mjs"
+    "benchmark": "node scripts/benchmark.mjs",
+    "docs:dev": "pnpm --dir docs dev",
+    "docs:build": "pnpm --dir docs build",
+    "docs:format:check": "pnpm --dir docs format:check"
   }
 }

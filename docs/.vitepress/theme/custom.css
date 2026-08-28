@@ -1,0 +1,164 @@
+:root {
+  --vp-c-bg: #f4efe6;
+  --vp-c-bg-alt: #ede5da;
+  --vp-c-bg-elv: rgba(255, 252, 246, 0.88);
+  --vp-c-bg-soft: rgba(255, 252, 246, 0.68);
+  --vp-c-text-1: #1f1c18;
+  --vp-c-text-2: #5e574e;
+  --vp-c-text-3: #82796d;
+  --vp-c-brand-1: #c95424;
+  --vp-c-brand-2: #e86f35;
+  --vp-c-brand-3: #f0a06f;
+  --vp-c-divider: #d9d0c3;
+  --vp-nav-bg-color: rgba(244, 239, 230, 0.86);
+  --vp-button-brand-bg: #e86f35;
+  --vp-button-brand-hover-bg: #cc5928;
+  --vp-button-brand-text: #fffaf3;
+  --vp-home-hero-name-color: #1f1c18;
+  --vp-home-hero-name-background: linear-gradient(
+    120deg,
+    #e86f35,
+    #db5d63 48%,
+    #4778c8
+  );
+  --vp-home-hero-image-background-image: linear-gradient(
+    135deg,
+    rgba(232, 111, 53, 0.18),
+    rgba(63, 157, 131, 0.18)
+  );
+  --vp-home-hero-image-filter: blur(48px);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+body {
+  background:
+    radial-gradient(
+      circle at 15% 5%,
+      rgba(232, 111, 53, 0.08),
+      transparent 27rem
+    ),
+    radial-gradient(
+      circle at 85% 12%,
+      rgba(71, 120, 200, 0.08),
+      transparent 24rem
+    ),
+    var(--vp-c-bg);
+}
+.VPNavBar {
+  background: var(--vp-nav-bg-color);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(217, 208, 195, 0.75);
+}
+.VPNavBarTitle .logo {
+  max-width: 164px;
+  height: 32px;
+}
+.VPHomeHero .name,
+.VPHomeHero .text,
+.VPHomeHero .tagline,
+.VPFeature,
+.VPDoc h1,
+.VPDoc h2,
+.VPDoc h3 {
+  letter-spacing: -0.025em;
+}
+.VPHomeHero .name {
+  font-weight: 800;
+}
+.VPFeature {
+  background: rgba(255, 252, 246, 0.62);
+  border: 1px solid rgba(217, 208, 195, 0.9);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(88, 70, 49, 0.05);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.VPFeature:hover {
+  border-color: rgba(232, 111, 53, 0.55);
+  box-shadow: 0 16px 36px rgba(88, 70, 49, 0.1);
+  transform: translateY(-2px);
+}
+.VPButton {
+  border-radius: 10px;
+  font-weight: 700;
+}
+.VPDoc a:focus-visible,
+.VPNavBar a:focus-visible,
+.VPButton:focus-visible {
+  outline: 3px solid rgba(71, 120, 200, 0.5);
+  outline-offset: 3px;
+}
+.nice-code-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 2.5rem auto;
+  max-width: 960px;
+}
+.nice-code-flow div {
+  padding: 18px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  background: rgba(255, 252, 246, 0.76);
+  color: var(--vp-c-text-1);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.nice-code-flow div:nth-child(1) {
+  border-top: 3px solid #e86f35;
+}
+.nice-code-flow div:nth-child(2) {
+  border-top: 3px solid #db5d63;
+}
+.nice-code-flow div:nth-child(3) {
+  border-top: 3px solid #4778c8;
+}
+.nice-code-flow div:nth-child(4) {
+  border-top: 3px solid #3f9d83;
+}
+.nice-code-terminal {
+  max-width: 860px;
+  margin: 2rem auto;
+  padding: 22px 24px;
+  border: 1px solid #36332f;
+  border-radius: 16px;
+  background: #242321;
+  color: #f7f0e5;
+  box-shadow: 0 18px 40px rgba(31, 28, 24, 0.16);
+  font:
+    0.9rem/1.7 "JetBrains Mono",
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+  overflow-x: auto;
+}
+.nice-code-terminal .prompt {
+  color: #f2a16f;
+}
+.nice-code-terminal .pass {
+  color: #8ed1ae;
+}
+.nice-code-terminal .review {
+  color: #f2c777;
+}
+@media (max-width: 700px) {
+  .nice-code-flow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 460px) {
+  .nice-code-flow {
+    grid-template-columns: 1fr;
+  }
+  .VPNavBarTitle .logo {
+    max-width: 138px;
+  }
+}

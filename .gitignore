@@ -1,3 +1,7 @@
 .DS_Store
 *.sarif
 .nice-code-reports/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+docs/node_modules/
+docs/pnpm-workspace.yaml

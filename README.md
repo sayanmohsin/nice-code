@@ -19,6 +19,20 @@ Nice Code is deliberately not a replacement for language tooling. It adds a cons
 evidence-oriented review on top of Clippy, Biome, TypeScript, Dart Analyzer, `gofmt`, framework
 checks, and project-specific tests.
 
+## Documentation site
+
+The repository includes a VitePress documentation site for the CLI, project
+integration, agent workflow, reports, audits, and pattern lifecycle.
+
+```bash
+pnpm install --dir docs
+pnpm docs:dev
+pnpm docs:build
+```
+
+The site is configured for GitHub Pages. The root README remains the package
+and repository entry point; the docs site is the task-oriented guide.
+
 ## How it works
 
 ```text
