@@ -22,6 +22,9 @@
   --vp-code-block-color: #39342e;
   --vp-code-line-highlight-color: rgba(232, 111, 53, 0.08);
   --vp-code-copy-code-hover-bg: #d9cdbf;
+  --vp-layout-max-width: 1480px;
+  --vp-sidebar-width: 280px;
+  --vp-content-width: 960px;
   --vp-home-hero-name-color: #1f1c18;
   --vp-home-hero-name-background: linear-gradient(
     120deg,
@@ -69,6 +72,9 @@
   --vp-code-block-color: #eee8df;
   --vp-code-line-highlight-color: rgba(242, 154, 104, 0.12);
   --vp-code-copy-code-hover-bg: #3a3d44;
+  --vp-layout-max-width: 1480px;
+  --vp-sidebar-width: 280px;
+  --vp-content-width: 960px;
   --vp-home-hero-name-color: #f4efe6;
   --vp-home-hero-name-background: linear-gradient(
     120deg,
@@ -116,8 +122,17 @@ body {
   border-bottom: 1px solid rgba(217, 208, 195, 0.75);
 }
 .VPNavBarTitle .logo {
-  max-width: 164px;
+  display: block;
+  width: 164px;
+  max-width: none;
   height: 32px;
+  object-fit: contain;
+}
+.VPNavBarTitle {
+  min-width: 184px;
+}
+.VPNavBar .content {
+  min-width: 0;
 }
 .VPHomeHero .name,
 .VPHomeHero .text,
@@ -297,11 +312,19 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 }
+@media (max-width: 960px) {
+  .VPNavBarTitle {
+    min-width: 154px;
+  }
+  .VPNavBarTitle .logo {
+    width: 140px;
+  }
+}
 @media (max-width: 460px) {
   .nice-code-flow {
     grid-template-columns: 1fr;
   }
   .VPNavBarTitle .logo {
-    max-width: 138px;
+    width: 132px;
   }
 }
