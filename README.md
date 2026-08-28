@@ -33,6 +33,8 @@ pnpm docs:build
 The site is configured for GitHub Pages. The root README remains the package
 and repository entry point; the docs site is the task-oriented guide.
 
+Read the published documentation at [sayanmohsin.github.io/nice-code](https://sayanmohsin.github.io/nice-code/).
+
 ## How it works
 
 ```text
