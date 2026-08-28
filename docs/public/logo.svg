@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 64" role="img" aria-labelledby="title desc">
-  <title id="title">nice-code</title>
-  <desc id="desc">Nice Code wordmark with a code bracket and checkmark.</desc>
-  <defs><linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e86f35"/><stop offset="0.48" stop-color="#db5d63"/><stop offset="1" stop-color="#4778c8"/></linearGradient></defs>
-  <g fill="none" stroke="url(#accent)" stroke-linecap="round" stroke-linejoin="round"><path d="M30 17 18 32l12 15" stroke-width="4"/><path d="m42 39 7 7 14-17" stroke-width="4"/><path d="m70 17 12 15-12 15" stroke-width="4"/></g>
-  <circle cx="18" cy="32" r="2.5" fill="#e86f35"/><circle cx="82" cy="32" r="2.5" fill="#4778c8"/>
-  <text x="101" y="42" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="29" font-weight="700" letter-spacing="0.2"><tspan fill="#1f1c18">nice</tspan><tspan fill="url(#accent)">-</tspan><tspan fill="#1f1c18">code</tspan></text>
-</svg>

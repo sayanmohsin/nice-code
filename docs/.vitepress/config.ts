@@ -12,7 +12,7 @@ export default defineConfig({
     ["meta", { name: "theme-color", content: "#f4efe6" }],
   ],
   themeConfig: {
-    logo: "/logo.svg",
+    logo: "/logo-wordmark.svg",
     siteTitle: false,
     nav: [
       { text: "Start here", link: "/getting-started" },
