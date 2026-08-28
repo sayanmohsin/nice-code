@@ -8,7 +8,7 @@ export default defineConfig({
   base: "/nice-code/",
   cleanUrls: true,
   head: [
-    ["link", { rel: "icon", href: "/nice-code/logo.svg" }],
+    ["link", { rel: "icon", href: "/nice-code/favicon.svg" }],
     ["meta", { name: "theme-color", content: "#f4efe6" }],
   ],
   themeConfig: {

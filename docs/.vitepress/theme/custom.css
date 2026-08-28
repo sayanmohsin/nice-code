@@ -71,6 +71,41 @@ body {
 .VPHomeHero .name {
   font-weight: 800;
 }
+.VPDoc {
+  color: var(--vp-c-text-1);
+}
+.VPDoc p,
+.VPDoc li {
+  color: var(--vp-c-text-2);
+  line-height: 1.78;
+}
+.VPDoc strong,
+.VPDoc th {
+  color: var(--vp-c-text-1);
+}
+.VPDoc h1,
+.VPDoc h2,
+.VPDoc h3,
+.VPDoc h4 {
+  color: var(--vp-c-text-1);
+}
+.VPDoc h2 {
+  margin-top: 3rem;
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: 1.5rem;
+}
+.VPDoc table {
+  display: table;
+  width: 100%;
+}
+.VPDoc th,
+.VPDoc td {
+  padding: 12px 16px;
+}
+.VPDoc code {
+  color: #9a3f1d;
+  background: rgba(232, 111, 53, 0.1);
+}
 .VPFeature {
   background: rgba(255, 252, 246, 0.62);
   border: 1px solid rgba(217, 208, 195, 0.9);
@@ -89,6 +124,16 @@ body {
 .VPButton {
   border-radius: 10px;
   font-weight: 700;
+}
+.VPDoc a {
+  color: #a9441f;
+  text-decoration: underline;
+  text-decoration-color: rgba(169, 68, 31, 0.35);
+  text-underline-offset: 3px;
+}
+.VPDoc a:hover {
+  color: #4778c8;
+  text-decoration-color: currentColor;
 }
 .VPDoc a:focus-visible,
 .VPNavBar a:focus-visible,
