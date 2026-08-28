@@ -162,13 +162,35 @@ body {
 .VPDoc td {
   padding: 12px 16px;
 }
-.VPDoc code {
+.VPDoc p code,
+.VPDoc li code,
+.VPDoc td code,
+.VPDoc th code {
   color: #9a3f1d;
   background: rgba(232, 111, 53, 0.1);
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
 }
-.dark .VPDoc code {
+.VPDoc div[class*="language-"] {
+  background: #ebe1d5;
+}
+.VPDoc div[class*="language-"] code {
+  background: transparent;
+  color: #39342e;
+}
+.dark .VPDoc p code,
+.dark .VPDoc li code,
+.dark .VPDoc td code,
+.dark .VPDoc th code {
   color: #ffc09d;
   background: rgba(242, 154, 104, 0.14);
+}
+.dark .VPDoc div[class*="language-"] {
+  background: #17181b;
+}
+.dark .VPDoc div[class*="language-"] code {
+  background: transparent;
+  color: #eee8df;
 }
 .VPFeature {
   background: rgba(255, 252, 246, 0.62);
