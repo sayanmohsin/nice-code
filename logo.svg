@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 64" role="img" aria-labelledby="title desc">
   <title id="title">nice-code</title>
-  <desc id="desc">Nice Code logo with a bright code bracket and checkmark on a dark rounded background.</desc>
+  <desc id="desc">Nice Code wordmark with a code bracket and checkmark.</desc>
   <defs>
     <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#e86f35"/>
@@ -15,8 +15,6 @@
       </feMerge>
     </filter>
   </defs>
-
-  <rect width="300" height="64" rx="11" fill="#f4efe6" stroke="#d9d0c3"/>
 
   <g fill="none" stroke="url(#accent)" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
     <path d="M30 17 18 32l12 15" stroke-width="4"/>
