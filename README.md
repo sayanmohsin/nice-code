@@ -188,6 +188,10 @@ prints one actionable finding per line, which is suitable for an agent to parse 
 full pattern library. Human-readable output uses colors and symbols when attached to a terminal;
 colors are disabled automatically for CI, redirected output, and `NO_COLOR`. Use `--color` or
 `--no-color` to override that behavior.
+
+Filtered JSON includes the complete scan in `scanSummary` and the filtered set in `findings`.
+Baseline-aware reports also expose repeated findings and optional age data in `baseline`. Full scans
+with findings are reported as `ADVISORY`; only changed-scan blockers produce `BLOCKED`.
 Native tools can be `PASS`, `FAIL`, or `SKIPPED`; a missing optional tool is not a Nice Code
 finding.
 

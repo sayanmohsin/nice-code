@@ -9,7 +9,8 @@ on it. The audit is about evidence and useful engineering judgment, not a qualit
 2. Run `node scripts/check.mjs --all --project /path/to/project --format json` for representative
    Rust, Go, TypeScript/React, Dart, and web projects.
 3. Run `node scripts/metrics.mjs report.json` and compare new, repeated, resolved, critical, and
-   review findings with the previous audit.
+   review findings with the previous audit. Use `findingStatus`, `byFileClass`, `repeatedFindings`,
+   and `findingAgeDays` to separate production risk from test review noise and track persistence.
 4. Sample findings and classify false positives, useful reviews, and missing checks.
 5. Compare results with Clippy, Biome, ESLint, Go vet, Dart Analyzer, compiler output, and CI.
 6. Review a sample of AI-generated and human-written changes for recurring failures.

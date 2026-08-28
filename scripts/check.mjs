@@ -168,14 +168,28 @@ function explain(id) {
   return true;
 }
 
+function findingKey(item) {
+  return `${item.id}:${item.file}:${item.line}:${item.message}`;
+}
+
+function legacyFindingKey(item) {
+  return `${item.id}:${item.file}:${item.message}`;
+}
+
 export function runChecks({ project = process.cwd(), mode = "changed", baseline = null } = {}) {
   const config = loadConfig(project);
   const files = readFiles(project, mode, config);
   const findings = applyConfig(config, checks.flatMap((check) => files.flatMap((file) => check.run(file))))
     .sort((left, right) => left.file.localeCompare(right.file) || left.line - right.line || left.id.localeCompare(right.id));
   const baselineFindings = baseline ? JSON.parse(readFileSync(baseline, "utf8")).findings ?? [] : [];
-  const baselineKeys = new Set(baselineFindings.map((item) => `${item.id}:${item.file}:${item.message}`));
-  const newFindings = findings.filter((item) => !baselineKeys.has(`${item.id}:${item.file}:${item.message}`));
+  const baselineKeys = new Set(baselineFindings.flatMap((item) => [findingKey(item), legacyFindingKey(item)]));
+  const newFindings = findings.filter((item) => !baselineKeys.has(findingKey(item)) && !baselineKeys.has(legacyFindingKey(item)));
+  const repeatedFindings = findings.filter((item) => baselineKeys.has(findingKey(item)) || baselineKeys.has(legacyFindingKey(item))).length;
+  const baselineAges = baselineFindings
+    .map((item) => item.firstSeen)
+    .filter(Boolean)
+    .map((firstSeen) => Math.max(0, Math.floor((Date.now() - Date.parse(firstSeen)) / 86_400_000)))
+    .filter(Number.isFinite);
   const report = {
     schemaVersion: 1,
     checkerVersion,
@@ -192,8 +206,13 @@ export function runChecks({ project = process.cwd(), mode = "changed", baseline 
       findings: baselineFindings.length,
       newFindings: newFindings.length,
       resolvedFindings: baselineFindings.filter((item) => !findings.some((current) => (
-        `${current.id}:${current.file}:${current.message}` === `${item.id}:${item.file}:${item.message}`
+        findingKey(current) === findingKey(item) || legacyFindingKey(current) === legacyFindingKey(item)
       ))).length,
+      repeatedFindings,
+      ageDays: baselineAges.length > 0 ? {
+        oldest: Math.max(...baselineAges),
+        average: Math.round(baselineAges.reduce((sum, age) => sum + age, 0) / baselineAges.length),
+      } : null,
     } : null,
     newFindings,
     summary: {
@@ -232,12 +251,13 @@ function main() {
     reasons: [],
   };
   if (options.writeBaseline) {
+    const baselineCreatedAt = new Date().toISOString();
     writeFileSync(options.writeBaseline, `${JSON.stringify({
       schemaVersion: 1,
       checkerVersion: "0.1.0",
-      createdAt: new Date().toISOString(),
+      createdAt: baselineCreatedAt,
       project: report.project,
-      findings: report.findings,
+      findings: report.findings.map((finding) => ({ ...finding, firstSeen: baselineCreatedAt })),
     }, null, 2)}\n`);
   }
   const blockingFindings = report.baseline ? report.newFindings : report.findings;
@@ -350,11 +370,14 @@ function printTextReport(report, requestedColor, output) {
   console.log(`${paint("dim", "Summary:")} ${report.summary.fail} fail, ${report.summary.warn} warn, ${report.summary.review} review.`);
   console.log(report.exit.blocked
     ? `${paint("red", "✕")} Result: ${paint("red", "BLOCKED")} (${report.exit.reasons.join(", ")})`
-    : `${paint("green", "✓")} Result: ${paint("green", "PASS")}`);
+    : report.summary.findings > 0
+      ? `${paint("yellow", "!")} Result: ${paint("yellow", "ADVISORY")} (${report.summary.findings} finding(s))`
+      : `${paint("green", "✓")} Result: ${paint("green", "PASS")}`);
 }
 
 function printAgentReport(report, output) {
-  console.log(`NICE_CODE status=${report.exit.blocked ? "BLOCKED" : "PASS"} mode=${report.mode} files=${report.summary.files} findings=${output.selectedCount} shown=${output.findings.length}`);
+  const status = report.exit.blocked ? "BLOCKED" : report.summary.findings > 0 ? "ADVISORY" : "PASS";
+  console.log(`NICE_CODE status=${status} mode=${report.mode} files=${report.summary.files} total=${report.summary.findings} selected=${output.selectedCount} shown=${output.findings.length}`);
   for (const item of output.findings) {
     console.log(`${item.status} ${item.id} ${item.file}:${item.line} severity=${item.severity} category=${item.category} :: ${item.message}`);
   }

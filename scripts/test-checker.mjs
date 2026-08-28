@@ -69,7 +69,7 @@ assert.equal(jsonReport.exit.blocked, false, "JSON output should include the com
 assert.equal(jsonReport.findings[0].file, "bad.ts", "JSON findings should have stable file ordering");
 
 const agentOutput = execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--format", "agent"], { encoding: "utf8" });
-assert(agentOutput.startsWith("NICE_CODE status=PASS"), "agent output should start with a parseable summary");
+assert(agentOutput.startsWith("NICE_CODE status=ADVISORY"), "full agent scans should be explicitly advisory");
 assert(agentOutput.includes("FAIL AP-SEC-001 bad.ts:2"), "agent output should include actionable finding lines");
 assert(!agentOutput.includes("REVIEW AP-LOG-002"), "agent output should omit review findings by default");
 
@@ -80,6 +80,18 @@ assert.equal(agentAliasOutput.split("\n").filter((line) => /^(FAIL|WARN|REVIEW) 
 const filteredJson = JSON.parse(execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--status", "FAIL", "--format", "json"], { encoding: "utf8" }));
 assert(filteredJson.findings.every((finding) => finding.status === "FAIL"), "explicit JSON filters should filter findings");
 assert.equal(filteredJson.scanSummary.findings, report.findings.length, "filtered JSON should retain the complete scan summary");
+
+const baselinePath = join(configuredProject, "baseline.json");
+writeFileSync(baselinePath, JSON.stringify({ findings: [report.findings[0]] }));
+const newOnlyJson = JSON.parse(execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--new-only", "--baseline", baselinePath, "--format", "json"], { encoding: "utf8" }));
+assert.equal(newOnlyJson.findings.length, report.findings.length - 1, "new-only output should remove baseline findings");
+assert.equal(newOnlyJson.baseline.repeatedFindings, 1, "baseline reports should count repeated findings");
+
+const manyFindingsProject = mkdtempSync(join(tmpdir(), "nice-code-many-findings-"));
+writeFileSync(join(manyFindingsProject, "many.ts"), Array.from({ length: 21 }, (_, index) => `console.log("event-${index}");`).join("\n"));
+const textOutput = execFileSync(process.execPath, [checkerPath, "--project", manyFindingsProject, "--all"], { encoding: "utf8" });
+assert(textOutput.includes("Result: ADVISORY"), "full human scans should be explicitly advisory");
+assert(textOutput.includes("finding(s) hidden"), "human full scans should cap output by default");
 
 assert.throws(
   () => execFileSync(process.execPath, [checkerPath, "--project", project, "--unknown"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }),
