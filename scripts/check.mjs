@@ -332,12 +332,13 @@ function printTextReport(report, requestedColor, output) {
   } : Object.fromEntries(["reset", "dim", "red", "yellow", "green", "cyan", "bold"].map((key) => [key, ""]));
   const paint = (color, text) => `${ansi[color]}${text}${ansi.reset}`;
   const symbol = (status) => status === "FAIL" ? paint("red", "✕") : status === "WARN" || status === "REVIEW" ? paint("yellow", "!") : paint("green", "✓");
+  const logo = `${paint("cyan", "‹")}${paint("green", "✓")}${paint("cyan", "›")}`;
   const status = (value) => {
     const raw = value.trim();
     return raw === "FAIL" ? paint("red", value) : raw === "WARN" || raw === "REVIEW" ? paint("yellow", value) : paint("green", value);
   };
 
-  console.log(`${paint("bold", "Nice Code")} ${paint("dim", `v${checkerVersion}`)}`);
+  console.log(`${logo} ${paint("bold", "Nice Code")} ${paint("dim", `v${checkerVersion}`)}`);
   console.log(`${paint("dim", "Project:")} ${report.project}`);
   console.log(`${paint("dim", "Mode:")} ${report.mode} ${paint("dim", "| Files:")} ${report.summary.files} ${paint("dim", "| Findings:")} ${report.summary.findings}`);
   console.log("");
