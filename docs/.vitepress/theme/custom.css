@@ -14,6 +14,14 @@
   --vp-button-brand-bg: #e86f35;
   --vp-button-brand-hover-bg: #cc5928;
   --vp-button-brand-text: #fffaf3;
+  --vp-button-alt-bg: #e8dfd3;
+  --vp-button-alt-hover-bg: #ddd1c2;
+  --vp-button-alt-text: #1f1c18;
+  --vp-button-alt-hover-text: #1f1c18;
+  --vp-code-block-bg: #ebe1d5;
+  --vp-code-block-color: #39342e;
+  --vp-code-line-highlight-color: rgba(232, 111, 53, 0.08);
+  --vp-code-copy-code-hover-bg: #d9cdbf;
   --vp-home-hero-name-color: #1f1c18;
   --vp-home-hero-name-background: linear-gradient(
     120deg,
@@ -36,6 +44,44 @@
     "Segoe UI",
     sans-serif;
 }
+.dark {
+  --vp-c-bg: #1f2024;
+  --vp-c-bg-alt: #25272c;
+  --vp-c-bg-elv: rgba(39, 41, 47, 0.92);
+  --vp-c-bg-soft: rgba(45, 47, 54, 0.86);
+  --vp-c-text-1: #f4efe6;
+  --vp-c-text-2: #d0c7bc;
+  --vp-c-text-3: #a49b90;
+  --vp-c-brand-1: #f29a68;
+  --vp-c-brand-2: #f2ad83;
+  --vp-c-brand-3: #ffd0ae;
+  --vp-c-divider: #44454a;
+  --vp-c-gutter: #292b30;
+  --vp-nav-bg-color: rgba(31, 32, 36, 0.88);
+  --vp-button-brand-bg: #e86f35;
+  --vp-button-brand-hover-bg: #f28a52;
+  --vp-button-brand-text: #fffaf3;
+  --vp-button-alt-bg: #383b43;
+  --vp-button-alt-hover-bg: #454952;
+  --vp-button-alt-text: #f4efe6;
+  --vp-button-alt-hover-text: #fffaf3;
+  --vp-code-block-bg: #17181b;
+  --vp-code-block-color: #eee8df;
+  --vp-code-line-highlight-color: rgba(242, 154, 104, 0.12);
+  --vp-code-copy-code-hover-bg: #3a3d44;
+  --vp-home-hero-name-color: #f4efe6;
+  --vp-home-hero-name-background: linear-gradient(
+    120deg,
+    #f29a68,
+    #e98d98 48%,
+    #8eace8
+  );
+  --vp-home-hero-image-background-image: linear-gradient(
+    135deg,
+    rgba(232, 111, 53, 0.22),
+    rgba(63, 157, 131, 0.22)
+  );
+}
 body {
   background:
     radial-gradient(
@@ -46,6 +92,20 @@ body {
     radial-gradient(
       circle at 85% 12%,
       rgba(71, 120, 200, 0.08),
+      transparent 24rem
+    ),
+    var(--vp-c-bg);
+}
+.dark body {
+  background:
+    radial-gradient(
+      circle at 15% 5%,
+      rgba(232, 111, 53, 0.12),
+      transparent 27rem
+    ),
+    radial-gradient(
+      circle at 85% 12%,
+      rgba(71, 120, 200, 0.12),
       transparent 24rem
     ),
     var(--vp-c-bg);
@@ -106,6 +166,10 @@ body {
   color: #9a3f1d;
   background: rgba(232, 111, 53, 0.1);
 }
+.dark .VPDoc code {
+  color: #ffc09d;
+  background: rgba(242, 154, 104, 0.14);
+}
 .VPFeature {
   background: rgba(255, 252, 246, 0.62);
   border: 1px solid rgba(217, 208, 195, 0.9);
@@ -115,6 +179,11 @@ body {
     border-color 160ms ease,
     transform 160ms ease,
     box-shadow 160ms ease;
+}
+.dark .VPFeature,
+.dark .nice-code-flow div {
+  background: rgba(45, 47, 54, 0.78);
+  border-color: rgba(83, 84, 90, 0.9);
 }
 .VPFeature:hover {
   border-color: rgba(232, 111, 53, 0.55);
@@ -134,6 +203,13 @@ body {
 .VPDoc a:hover {
   color: #4778c8;
   text-decoration-color: currentColor;
+}
+.dark .VPDoc a {
+  color: #f2ad83;
+  text-decoration-color: rgba(242, 173, 131, 0.45);
+}
+.dark .VPDoc a:hover {
+  color: #9fbcf0;
 }
 .VPDoc a:focus-visible,
 .VPNavBar a:focus-visible,
