@@ -29,12 +29,19 @@ function parseArgs(argv) {
     baseline: null,
     writeBaseline: null,
   };
+  let explicitMode = false;
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
-    if (argument === "--all") options.mode = "all";
-    else if (argument === "--changed") options.mode = "changed";
-    else if (argument === "--ci") {
+    if (argument === "--all") {
+      options.mode = "all";
+      explicitMode = true;
+    }
+    else if (argument === "--changed") {
       options.mode = "changed";
+      explicitMode = true;
+    }
+    else if (argument === "--ci") {
+      if (!explicitMode) options.mode = "changed";
       options.ci = true;
     }
     else if (argument === "--color") options.color = true;

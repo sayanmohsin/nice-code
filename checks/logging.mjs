@@ -1,4 +1,4 @@
-import { finding, isCodeFile, isTestLikePath, isToolingPath, lineNumber } from "./helpers.mjs";
+import { finding, isCodeFile, isTestLikePath, isTestLikeLocation, isToolingPath, lineNumber } from "./helpers.mjs";
 
 const source = "https://microsoft.github.io/rust-guidelines/guidelines/universal/";
 
@@ -14,9 +14,11 @@ export const checks = [
         return [];
       }
       const results = [];
-      const pattern = /(?:console\.|logger\.|tracing::|log::|println!|eprintln!)[^\n]*(?:token|password|secret|authorization|api[_-]?key)/gi;
+      const pattern = /(?:console\.|logger\.|tracing::|log::|println!|eprintln!)[^\n]*/gi;
       for (const match of file.content.matchAll(pattern)) {
-        const testLike = isTestLikePath(file.path);
+        const expression = match[0].replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, "");
+        if (!/(?:token|password|secret|authorization|api[_-]?key)/i.test(expression)) continue;
+        const testLike = isTestLikeLocation(file, match.index);
         const result = finding(this, file, lineNumber(file.content, match.index), "Log expression may expose a credential or sensitive value.", testLike ? "REVIEW" : "FAIL");
         if (testLike) result.severity = "warning";
         results.push(result);

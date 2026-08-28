@@ -13,6 +13,12 @@ export function loadConfig(project) {
   if (!existsSync(path)) return { ...defaultConfig, path: null };
   try {
     const user = JSON.parse(readFileSync(path, "utf8"));
+    if (user.exceptions !== undefined && (!Array.isArray(user.exceptions) || user.exceptions.some((exception) => (
+      !exception || typeof exception.id !== "string" || exception.id.length === 0
+      || typeof exception.reason !== "string" || exception.reason.trim().length === 0
+    )))) {
+      throw new Error("exceptions must contain an id and a non-empty reason");
+    }
     return {
       ...defaultConfig,
       ...user,

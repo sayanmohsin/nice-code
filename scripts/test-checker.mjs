@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { runChecks } from "./check.mjs";
@@ -40,6 +40,33 @@ const testSecretReport = runChecks({ project: testSecretProject, mode: "all" });
 assert.equal(testSecretReport.findings[0].status, "REVIEW", "test-only credentials should be review findings");
 assert.equal(testSecretReport.findings[0].severity, "warning", "test-only credentials should not be critical");
 
+const rustTestProject = mkdtempSync(join(tmpdir(), "nice-code-rust-test-"));
+writeFileSync(join(rustTestProject, "config.rs"), [
+  'fn production() { tracing::info!("auth token configured"); }',
+  "#[cfg(test)]",
+  "mod tests {",
+  "  #[test]",
+  '  fn uses_fixture() { let token = "server-token-that-is-long-enough"; tracing::info!("token {}", token); }',
+  "}",
+].join("\n"));
+const rustTestReport = runChecks({ project: rustTestProject, mode: "all" });
+const rustSecret = rustTestReport.findings.find((finding) => finding.id === "AP-SEC-001");
+assert.equal(rustSecret.status, "REVIEW", "test locations inside production files should remain reviewable");
+assert.equal(rustSecret.severity, "warning", "test-location credentials should not be critical");
+assert(!rustTestReport.findings.some((finding) => finding.id === "AP-LOG-001" && finding.line === 1), "static log text should not be treated as a leaked credential");
+assert(rustTestReport.findings.some((finding) => finding.id === "AP-LOG-001" && finding.line === 5), "interpolated credentials should remain detectable");
+
+const toolingProject = mkdtempSync(join(tmpdir(), "nice-code-tooling-"));
+const toolingPath = join(toolingProject, "packages", "thingd-cli", "src");
+mkdirSync(toolingPath, { recursive: true });
+writeFileSync(join(toolingPath, "index.ts"), 'console.log("interactive CLI output");\n');
+const toolingReport = runChecks({ project: toolingProject, mode: "all" });
+assert(!toolingReport.findings.some((finding) => finding.id === "AP-LOG-002"), "CLI packages should be treated as tooling");
+
+const invalidConfigProject = mkdtempSync(join(tmpdir(), "nice-code-invalid-config-"));
+writeFileSync(join(invalidConfigProject, ".nice-code.json"), JSON.stringify({ exceptions: [{ id: "AP-SEC-001" }] }));
+assert.throws(() => runChecks({ project: invalidConfigProject, mode: "all" }), /non-empty reason/, "exceptions should require a reason");
+
 const placeholderProject = mkdtempSync(join(tmpdir(), "nice-code-placeholder-"));
 writeFileSync(join(placeholderProject, "docs.ts"), [
   'const authToken = "<your-api-key>";',
@@ -52,7 +79,6 @@ assert.equal(placeholderReport.findings.length, 0, "placeholders and environment
 const workspaceProject = mkdtempSync(join(tmpdir(), "nice-code-workspace-"));
 writeFileSync(join(workspaceProject, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
 const workspaceApp = join(workspaceProject, "apps");
-const { mkdirSync } = await import("node:fs");
 mkdirSync(workspaceApp);
 writeFileSync(join(workspaceApp, "package.json"), JSON.stringify({ name: "workspace-app", dependencies: { react: "1", "@nestjs/core": "1" } }));
 const workspaceReport = runChecks({ project: workspaceProject, mode: "all" });
@@ -67,6 +93,9 @@ assert.equal(jsonReport.schemaVersion, 1, "JSON output should expose a schema ve
 assert.equal(jsonReport.checkerVersion, "0.1.0", "JSON output should expose the checker version");
 assert.equal(jsonReport.exit.blocked, false, "JSON output should include the computed exit state");
 assert.equal(jsonReport.findings[0].file, "bad.ts", "JSON findings should have stable file ordering");
+
+const ciAllOutput = JSON.parse(execFileSync(process.execPath, [checkerPath, "--project", project, "--ci", "--all", "--format", "json"], { encoding: "utf8" }));
+assert.equal(ciAllOutput.mode, "all", "explicit --all should override --ci changed-file mode");
 
 const agentOutput = execFileSync(process.execPath, [checkerPath, "--project", project, "--all", "--format", "agent"], { encoding: "utf8" });
 assert(agentOutput.startsWith("NICE_CODE status=ADVISORY"), "full agent scans should be explicitly advisory");

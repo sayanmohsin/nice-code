@@ -26,8 +26,15 @@ export function isTestLikePath(path) {
     || /(?:\.test|\.spec)\.[^.]+$/i.test(path);
 }
 
+export function isTestLikeLocation(file, index) {
+  if (isTestLikePath(file.path)) return true;
+  const before = file.content.slice(Math.max(0, index - 12_000), index);
+  const testMarker = Math.max(before.lastIndexOf("#[test]"), before.lastIndexOf("#[cfg(test)]"));
+  return testMarker >= 0;
+}
+
 export function isToolingPath(path) {
-  return /(?:^|[\\/])(?:scripts?|tools?|bin|cli)(?:[\\/]|$)/i.test(path);
+  return /(?:^|[\\/])(?:scripts?|tools?|bin|cli|[^\\/]*-cli)(?:[\\/]|$)/i.test(path);
 }
 
 export function isLikelySetupPath(path) {

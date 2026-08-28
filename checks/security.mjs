@@ -1,4 +1,4 @@
-import { finding, isCodeFile, isTestLikePath, lineNumber } from "./helpers.mjs";
+import { finding, isCodeFile, isTestLikeLocation, lineNumber } from "./helpers.mjs";
 
 export const checks = [
   {
@@ -17,7 +17,7 @@ export const checks = [
         if (isUnmistakablePlaceholder(match[0])) {
           continue;
         }
-        const testLike = isTestLikePath(file.path);
+        const testLike = isTestLikeLocation(file, match.index);
         const result = finding(this, file, lineNumber(file.content, match.index), "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", testLike ? "REVIEW" : "FAIL");
         if (testLike) result.severity = "warning";
         results.push(result);
