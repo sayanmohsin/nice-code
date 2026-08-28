@@ -1,4 +1,4 @@
-import { finding, isCodeFile, isTestLikePath, isTestLikeLocation, isToolingPath, lineNumber } from "./helpers.mjs";
+import { finding, isCodeFile, isTestLikePath, isToolingPath, lineNumber } from "./helpers.mjs";
 
 const source = "https://microsoft.github.io/rust-guidelines/guidelines/universal/";
 
@@ -16,9 +16,8 @@ export const checks = [
       const results = [];
       const pattern = /(?:console\.|logger\.|tracing::|log::|println!|eprintln!)[^\n]*/gi;
       for (const match of file.content.matchAll(pattern)) {
-        const expression = match[0].replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, "");
-        if (!/(?:token|password|secret|authorization|api[_-]?key)/i.test(expression)) continue;
-        const testLike = isTestLikeLocation(file, match.index);
+        if (!containsSensitiveValue(match[0])) continue;
+        const testLike = isTestLikePath(file.path);
         const result = finding(this, file, lineNumber(file.content, match.index), "Log expression may expose a credential or sensitive value.", testLike ? "REVIEW" : "FAIL");
         if (testLike) result.severity = "warning";
         results.push(result);
@@ -46,3 +45,12 @@ export const checks = [
     },
   },
 ];
+
+function containsSensitiveValue(expression) {
+  if (/\$\{[^}]*\b(?:raw|token|password|secret|authorization|api[_-]?key|access[_-]?token)\b[^}]*\}/i.test(expression)) {
+    return true;
+  }
+
+  const withoutStrings = expression.replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, "");
+  return /(?<!\.)\b(?:raw|token|password|secret|authorization|api[_-]?key|access[_-]?token)\b/i.test(withoutStrings);
+}

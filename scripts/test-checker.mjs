@@ -76,6 +76,15 @@ writeFileSync(join(placeholderProject, "docs.ts"), [
 const placeholderReport = runChecks({ project: placeholderProject, mode: "all" });
 assert.equal(placeholderReport.findings.length, 0, "placeholders and environment references should be ignored");
 
+const loggingProject = mkdtempSync(join(tmpdir(), "nice-code-logging-"));
+writeFileSync(join(loggingProject, "logging.ts"), [
+  'logger.error("admin token reseed failed");',
+  'logger.info(`token=${token}`);',
+  'logger.info({ token }, "token generated");',
+].join("\n"));
+const loggingReport = runChecks({ project: loggingProject, mode: "all" });
+assert.equal(loggingReport.findings.filter((finding) => finding.id === "AP-LOG-001").length, 2, "logging checks should flag values, not message text");
+
 const workspaceProject = mkdtempSync(join(tmpdir(), "nice-code-workspace-"));
 writeFileSync(join(workspaceProject, "pnpm-workspace.yaml"), "packages:\n  - apps/*\n");
 const workspaceApp = join(workspaceProject, "apps");
