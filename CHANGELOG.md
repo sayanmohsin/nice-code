@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/sayanmohsin/nice-code/compare/v0.1.6...v0.1.7) (2026-08-30)
+
+
+### Bug Fixes
+
+* quote release version lookup ([5930dfe](https://github.com/sayanmohsin/nice-code/commit/5930dfea4eb5a5951e2f0de45dce2d545d2df392))
+
 ## [0.1.6](https://github.com/sayanmohsin/nice-code/compare/v0.1.5...v0.1.6) (2026-08-30)
 
 
