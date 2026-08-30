@@ -10,4 +10,4 @@ The repository `SKILL.md` routes an agent to relevant patterns. The agent can ru
 
 ## CI and audits
 
-Use JSON or SARIF for complete artifacts. Keep uncertain `REVIEW` findings visible without turning them into automatic failures. For monthly audits, run a full scan, compare it with a baseline, inspect repeated findings, and revise noisy patterns only when evidence supports the change.
+Use JSON or SARIF for complete artifacts. Keep uncertain `REVIEW` findings visible without turning them into automatic failures. For monthly audits, run a full scan, generate or compare a baseline, inspect recurring findings, and revise noisy patterns only when evidence supports the change.

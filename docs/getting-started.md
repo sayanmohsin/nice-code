@@ -1,17 +1,22 @@
 # Getting started
 
-## Run without installing
+## Run from GitHub
 
 ```bash
-npx nice-code --changed --project .
-bunx nice-code --changed --project .
+git clone https://github.com/sayanmohsin/nice-code.git
+cd nice-code
+bun scripts/nice-code.ts --changed --project /path/to/project
 ```
 
-For a local checkout:
+For a local checkout of the repository itself:
 
 ```bash
 bun /path/to/nice-code/scripts/nice-code.ts --changed --project .
 ```
+
+The launcher uses a local release/debug engine when available and can download
+the matching verified GitHub Release binary when a published release exists.
+Rust is not required for normal users.
 
 ## First useful commands
 

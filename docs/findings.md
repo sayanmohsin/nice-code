@@ -10,4 +10,7 @@ Each finding has a stable pattern ID, file, line, category, severity, message, a
 | `PASS`   | The relevant check ran without a finding.                         |
 | `N/A`    | The check does not apply to the project or change.                |
 
-Human output is readable and capped for full scans. Agent output is compact and defaults to `FAIL` and `WARN`. JSON and SARIF retain complete results unless filtering is explicitly requested.
+Human output uses the compact terminal summary and hides `REVIEW` findings in a
+non-verbose full scan. Agent output is compact and defaults to `FAIL` and `WARN`.
+JSON and SARIF contain deterministic report findings; `--status`,
+`--max-findings`, and `--new-only` can explicitly filter the displayed set.

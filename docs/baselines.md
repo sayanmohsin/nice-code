@@ -1,10 +1,13 @@
 # Baselines
 
-Baselines separate existing work from findings introduced by a change.
+Baselines let you hide findings that were already accepted before a change.
 
 ```bash
 nice-code --all --format json --write-baseline .nice-code-baseline.json --project .
 nice-code --changed --new-only --baseline .nice-code-baseline.json --project .
 ```
 
-Finding identity is stable across runs using the pattern ID, file, line, and message. Reports can describe new, resolved, repeated, and unchanged findings without committing detailed scan output.
+The baseline file is a JSON array produced by `--write-baseline`. Finding
+identity uses the pattern ID, file, line, and message. `--new-only` filters the
+report to findings not present in that file; it does not automatically block CI
+or calculate resolved/age metrics.

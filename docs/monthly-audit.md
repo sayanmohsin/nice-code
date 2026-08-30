@@ -8,9 +8,10 @@ on it. The audit is about evidence and useful engineering judgment, not a qualit
 1. Review every source URL in `sources/index.md` and record whether official guidance changed.
 2. Run `bun scripts/nice-code.ts --all --project /path/to/project --format json` for representative
    Rust, Go, TypeScript/React, Dart, and web projects.
-3. Run `bun scripts/metrics.mjs report.json` and compare new, repeated, resolved, critical, and
-   review findings with the previous audit. Use `findingStatus`, `byFileClass`, `repeatedFindings`,
-   and `findingAgeDays` to separate production risk from test review noise and track persistence.
+3. Run `bun scripts/metrics.mjs report.json` and compare status, category, file-class,
+   critical, and review findings with the previous audit. Use a generated baseline
+   with `--new-only` when the audit needs to distinguish accepted findings from
+   findings that are currently visible.
 4. Sample findings and classify false positives, useful reviews, and missing checks.
 5. Compare results with Clippy, Biome, ESLint, Go vet, Dart Analyzer, compiler output, and CI.
 6. Review a sample of AI-generated and human-written changes for recurring failures.
@@ -24,28 +25,33 @@ on it. The audit is about evidence and useful engineering judgment, not a qualit
 # Nice Code audit: YYYY-MM
 
 ## Repositories and reports
+
 - Projects:
 - Report locations:
 
 ## Findings
-- New:
-- Resolved:
-- Repeated:
+
+- Newly visible:
+- No longer visible:
+- Recurring:
 - Critical:
 - Review:
 - False positives:
 
 ## Sources reviewed
+
 - Source:
 - Changed guidance:
 
 ## Decisions
+
 - Patterns revised:
 - Patterns proposed:
 - Patterns deprecated/rejected:
 - Owners and due dates:
 
 ## Next review
+
 - Date:
 ```
 

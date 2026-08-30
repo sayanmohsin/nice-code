@@ -16,5 +16,6 @@ The engine scans JavaScript, TypeScript, Rust, Go, and Dart source files. It
 supports text, JSON, SARIF, and agent output, plus the existing native-tool
 checks in `--ci` mode.
 
-The engine is currently used through the Bun launcher and is still being
-qualified for cross-platform release distribution.
+The engine is normally used through the Bun launcher. Tagged GitHub Releases
+build verified binaries for supported platforms; npm distribution is deferred
+until that binary contract is stable.

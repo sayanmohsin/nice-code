@@ -1,6 +1,8 @@
 # Project integration
 
-Nice Code supports a direct path, Git submodule, or npm package. Recommended project files are:
+Nice Code currently supports a direct checkout or Git submodule. npm
+distribution is planned after the binary release contract is stable.
+Recommended project files are:
 
 ```text
 .nice-code.json

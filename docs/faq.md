@@ -10,7 +10,9 @@ The recommended policy is advisory until a project has measured signal quality. 
 
 ### Does it require Bun?
 
-The current development CLI uses Bun to launch the Rust engine. Users do not need Rust when using a prebuilt GitHub Release binary.
+The GitHub-checkout launcher uses Bun. Users do not need Rust when using a
+prebuilt GitHub Release binary. npm distribution will provide the same launcher
+after the release contract is stable.
 
 ### Does it send source code over the network?
 
