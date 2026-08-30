@@ -1,6 +1,6 @@
 # Agent integration
 
-The repository-local [`SKILL.md`](https://github.com/sayanmohsin/nice-code/blob/main/SKILL.md) is an optional routing layer for coding agents.
+The repository-local [`SKILL.md`](https://github.com/sayanmohsin/nice-code/blob/main/SKILL.md) is an optional routing layer for coding agents. The Rust engine performs the analysis; the skill supplies context and review guidance around its results.
 
 1. Identify the changed area.
 2. Load only its relevant pattern.

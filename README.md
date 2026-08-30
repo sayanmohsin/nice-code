@@ -15,9 +15,11 @@ formatters, compilers, and linters cannot fully judge:
 - Security and privacy mistakes
 - API, reliability, and operational design gaps
 
-Nice Code is deliberately not a replacement for language tooling. Its Rust engine adds a
-conservative, evidence-oriented review on top of Clippy, Biome, TypeScript, Dart Analyzer,
-`gofmt`, framework checks, and project-specific tests.
+Nice Code is deliberately not a replacement for language tooling. Its Rust
+engine is the only analysis engine and adds a conservative, evidence-oriented
+review on top of Clippy, Biome, TypeScript, Dart Analyzer, `gofmt`, framework
+checks, and project-specific tests. Bun provides the launcher and development
+tooling around that engine.
 
 ## Documentation site
 
@@ -37,14 +39,16 @@ Read the published documentation at [sayanmohsin.github.io/nice-code](https://sa
 
 ## How it works
 
-```text
-Public engineering guidance
-        ↓
-Nice Code patterns and source registry
-        ↓
-Optional custom checks + native project tooling
-        ↓
-Local review, commit check, or CI report
+```mermaid
+flowchart TD
+    Sources[Public engineering guidance] --> Patterns[Patterns and source registry]
+    Patterns --> Rust[Rust analysis engine]
+    Native[Project tools: compilers, formatters, linters] --> Reports[Reports and exit decision]
+    Rust --> Reports
+    Bun[Bun launcher and support tooling] --> Rust
+    Reports --> Human[Human terminal review]
+    Reports --> Agent[Agent output and JSON]
+    Reports --> CI[SARIF and CI]
 ```
 
 Every pattern is classified as:
