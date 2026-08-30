@@ -345,6 +345,20 @@ artifacts; only a small trend summary should be committed when needed.
 
 ## Future npm package
 
+Releases are currently created manually from the CLI. Prepare each supported
+platform binary, then publish only after the complete platform set is present:
+
+```bash
+bun run release -- prepare 0.1.0
+bun run release -- prepare 0.1.0 --target x86_64-apple-darwin
+bun run release -- publish 0.1.0
+```
+
+`publish` requires all five supported binaries, generates `checksums.txt`, and
+uses the authenticated GitHub CLI to create the versioned Release. The release
+assets are not committed to Git. Cross-compilation toolchains or separate build
+machines are required for targets that are different from the release host.
+
 npm publication is intentionally deferred while the Rust binary contract and
 cross-platform release process mature. The package metadata and launcher are
 being kept compatible with that future distribution. Before publishing, inspect

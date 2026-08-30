@@ -45,6 +45,7 @@
     "test:bun": "bun scripts/test-engine.ts",
     "check:docs": "bun scripts/check-docs.mts",
     "pack:check": "npm pack --dry-run",
+    "release": "bun scripts/release.mts",
     "benchmark": "bun scripts/benchmark.ts",
     "engine:build": "cargo build --release --manifest-path engine/Cargo.toml",
     "engine:test": "cargo test --manifest-path engine/Cargo.toml",

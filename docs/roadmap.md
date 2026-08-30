@@ -2,4 +2,4 @@
 
 Near-term work is deliberately practical: improve signal quality from representative projects; keep agent output compact and stable; expand baseline and monthly audit reporting; validate the Rust engine and transparent Node-compatible launcher; harden GitHub Release binaries and checksums; publish npm only after the binary contract is stable; and add framework-aware checks only when a recurring gap is demonstrated.
 
-Nice Code should stay dependency-light, conservative, and easy to remove from a project. New checks must earn their place through useful evidence.
+Nice Code should stay dependency-light, conservative, and easy to remove from a project. New checks must earn their place through useful evidence. Binary releases are currently packaged manually with the versioned release CLI; automated builders can be added once release volume justifies them.
