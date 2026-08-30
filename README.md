@@ -55,11 +55,23 @@ the download with the published `checksums.txt` file.
 
 ## How it works
 
-![Nice Code architecture](assets/architecture.svg)
+```mermaid
+flowchart LR
+    Guidance[Sources and patterns] --> Engine[Rust analysis engine]
+    Project[Target project] --> Engine
+    Launcher[Node-compatible launcher] --> Engine
+    Engine --> Findings[Deterministic findings]
+    Engine --> Native[Native project tools]
+    Native --> Reports[Report and exit decision]
+    Findings --> Reports
+    Reports --> Text[Human terminal output]
+    Reports --> Agent[Agent format / JSON]
+    Reports --> Sarif[SARIF for CI]
+```
 
-The source Mermaid diagram is maintained in [`docs/architecture.md`](docs/architecture.md)
-for GitHub Pages and contributors. This static SVG is included because npm's
-README renderer does not render Mermaid code fences.
+The Rust engine owns discovery, parsing, rules, reports, and exit decisions.
+The Node-compatible launcher downloads and runs the matching engine binary;
+users do not need Bun, Cargo, or Rust installed.
 
 Every pattern is classified as:
 

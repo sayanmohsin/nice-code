@@ -24,7 +24,6 @@
   },
   "files": [
     "scripts/nice-code.mjs",
-    "assets/architecture.svg",
     "SKILL.md",
     "README.md",
     "LICENSE"
