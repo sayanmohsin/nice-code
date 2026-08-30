@@ -1,6 +1,6 @@
 {
   "name": "nice-code",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Source-backed engineering guardrails for reliable software development",
   "repository": {
     "type": "git",
