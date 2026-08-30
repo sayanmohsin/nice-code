@@ -151,10 +151,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.release-please.outputs.version }}
         run: |
-          if gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release upload "v$VERSION" release/* --clobber
+          if gh release view "v$VERSION" --repo sayanmohsin/nice-code >/dev/null 2>&1; then
+            gh release upload "v$VERSION" --repo sayanmohsin/nice-code release/* --clobber
           else
-            gh release create "v$VERSION" release/* --title "v$VERSION" --generate-notes
+            gh release create "v$VERSION" --repo sayanmohsin/nice-code release/* --title "v$VERSION" --generate-notes
           fi
 
   npm-publish:
