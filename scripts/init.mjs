@@ -22,4 +22,4 @@ writeFileSync(configPath, `${JSON.stringify({
   exceptions: [],
 }, null, 2)}\n`);
 console.log(`Created ${configPath}`);
-console.log("Add a project script or CI step pointing to scripts/check.mjs.");
+console.log("Add a project script or CI step pointing to scripts/nice-code.ts.");

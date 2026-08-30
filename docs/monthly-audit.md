@@ -6,9 +6,9 @@ on it. The audit is about evidence and useful engineering judgment, not a qualit
 ## Procedure
 
 1. Review every source URL in `sources/index.md` and record whether official guidance changed.
-2. Run `node scripts/check.mjs --all --project /path/to/project --format json` for representative
+2. Run `bun scripts/nice-code.ts --all --project /path/to/project --format json` for representative
    Rust, Go, TypeScript/React, Dart, and web projects.
-3. Run `node scripts/metrics.mjs report.json` and compare new, repeated, resolved, critical, and
+3. Run `bun scripts/metrics.mjs report.json` and compare new, repeated, resolved, critical, and
    review findings with the previous audit. Use `findingStatus`, `byFileClass`, `repeatedFindings`,
    and `findingAgeDays` to separate production risk from test review noise and track persistence.
 4. Sample findings and classify false positives, useful reviews, and missing checks.

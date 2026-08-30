@@ -10,7 +10,7 @@ bunx nice-code --changed --project .
 For a local checkout:
 
 ```bash
-node /path/to/nice-code/scripts/check.mjs --changed --project .
+bun /path/to/nice-code/scripts/nice-code.ts --changed --project .
 ```
 
 ## First useful commands

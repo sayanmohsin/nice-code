@@ -16,23 +16,25 @@
   "engines": {
     "node": ">=20"
   },
-  "files": ["checks/", "patterns/", "scripts/", "sources/", "SKILL.md", "README.md", "LICENSE"],
+  "files": ["engine/", "patterns/", "scripts/", "sources/", "SKILL.md", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },
   "bin": {
-    "nice-code": "scripts/check.mjs"
+    "nice-code": "scripts/nice-code.ts"
   },
   "scripts": {
-    "check": "node scripts/check.mjs --all --project .",
-    "metrics": "node scripts/metrics.mjs",
-    "init": "node scripts/init.mjs",
-    "test": "node scripts/test-checker.mjs",
-    "check:bun": "bun scripts/check.mjs --all --project .",
-    "test:bun": "bun scripts/test-checker.mjs",
-    "check:docs": "node scripts/check-docs.mjs",
+    "check": "bun scripts/nice-code.ts --all --project .",
+    "metrics": "bun scripts/metrics.mjs",
+    "init": "bun scripts/init.mjs",
+    "test": "cargo test --manifest-path engine/Cargo.toml",
+    "test:bun": "bun scripts/test-engine.ts",
+    "check:docs": "bun scripts/check-docs.mjs",
     "pack:check": "npm pack --dry-run",
-    "benchmark": "node scripts/benchmark.mjs",
+    "benchmark": "bun scripts/benchmark.ts",
+    "engine:build": "cargo build --release --manifest-path engine/Cargo.toml",
+    "engine:test": "cargo test --manifest-path engine/Cargo.toml",
+    "engine:check": "bun scripts/nice-code.ts --project . --changed",
     "docs:dev": "pnpm --dir docs dev",
     "docs:build": "pnpm --dir docs build",
     "docs:format:check": "pnpm --dir docs format:check"

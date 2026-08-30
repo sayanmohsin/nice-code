@@ -4,7 +4,7 @@ Run a changed-file check on pull requests and a full scan on a scheduled audit.
 
 ```yaml
 - name: Nice Code
-  run: node scripts/check.mjs --project . --changed --ci --format sarif > nice-code.sarif
+  run: bun scripts/nice-code.ts --project . --changed --ci --format sarif > nice-code.sarif
 
 - name: Upload Nice Code report
   uses: github/codeql-action/upload-sarif@v3

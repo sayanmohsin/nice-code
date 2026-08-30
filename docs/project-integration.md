@@ -11,8 +11,8 @@ package.json          # optional nice-code script
 ```json
 {
   "scripts": {
-    "nice-code": "nice-code --changed --project .",
-    "nice-code:all": "nice-code --all --project ."
+    "nice-code": "bun ../nice-code/scripts/nice-code.ts --changed --project .",
+    "nice-code:all": "bun ../nice-code/scripts/nice-code.ts --all --project ."
   }
 }
 ```

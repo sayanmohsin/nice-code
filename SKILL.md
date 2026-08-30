@@ -37,4 +37,4 @@ Read only the relevant pattern before making a recommendation:
 5. Do not claim an architecture or performance property from text inspection alone.
 
 The full source registry is in `sources/index.md`. The executable checker is
-`scripts/check.mjs`; use changed-file mode by default and `--all` for an explicit deeper scan.
+`scripts/nice-code.ts`; use changed-file mode by default and `--all` for an explicit deeper scan.

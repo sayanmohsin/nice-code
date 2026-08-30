@@ -6,26 +6,18 @@ on:
     branches: [main]
 
 jobs:
-  runtime:
-    name: ${{ matrix.runtime }}
+  engine:
+    name: Rust engine and Bun support
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        runtime: [node, bun]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
       - uses: oven-sh/setup-bun@v2
-        if: matrix.runtime == 'bun'
         with:
           bun-version: latest
-      - name: Run tests
-        run: ${{ matrix.runtime }} scripts/test-checker.mjs
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run Rust tests
+        run: cargo test --manifest-path engine/Cargo.toml
+      - name: Run Bun support tests
+        run: bun scripts/test-engine.ts
       - name: Validate documentation
-        if: matrix.runtime == 'node'
-        run: node scripts/check-docs.mjs
-      - name: Validate package contents
-        if: matrix.runtime == 'node'
-        run: npm pack --dry-run
+        run: bun scripts/check-docs.mjs

@@ -6,7 +6,7 @@ The command scans only files changed relative to the selected base. Use `--all` 
 
 ### SARIF is invalid
 
-Run the CLI directly and redirect only its output: `node scripts/check.mjs --project . --changed --ci --format sarif > nice-code.sarif`.
+Run the CLI directly and redirect only its output: `bun scripts/nice-code.ts --project . --changed --ci --format sarif > nice-code.sarif`.
 
 ### A native tool is missing
 

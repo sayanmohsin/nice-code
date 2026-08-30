@@ -8,9 +8,9 @@ No. Native tools remain authoritative for compilation, formatting, type checks, 
 
 The recommended policy is advisory until a project has measured signal quality. Only high-confidence, new findings should become blocking rules.
 
-### Does it require Node?
+### Does it require Bun?
 
-The published CLI targets Node 20+. Bun is supported for development and can run the CLI, but the package avoids Bun-only APIs.
+The current development CLI uses Bun to launch the Rust engine. Users do not need Rust when using a prebuilt GitHub Release binary.
 
 ### Does it send source code over the network?
 

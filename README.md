@@ -15,9 +15,9 @@ formatters, compilers, and linters cannot fully judge:
 - Security and privacy mistakes
 - API, reliability, and operational design gaps
 
-Nice Code is deliberately not a replacement for language tooling. It adds a conservative,
-evidence-oriented review on top of Clippy, Biome, TypeScript, Dart Analyzer, `gofmt`, framework
-checks, and project-specific tests.
+Nice Code is deliberately not a replacement for language tooling. Its Rust engine adds a
+conservative, evidence-oriented review on top of Clippy, Biome, TypeScript, Dart Analyzer,
+`gofmt`, framework checks, and project-specific tests.
 
 ## Documentation site
 
@@ -58,9 +58,8 @@ architectural or performance property.
 
 ## Quick start
 
-Nice Code is developed with Bun, but the published CLI requires only Node.js 20 or newer and has
-no runtime dependencies. The implementation uses portable Node APIs, so Bun-only APIs are not
-required for npm users.
+Nice Code is developed with Bun and uses a Rust engine for analysis. The current GitHub checkout
+is run through Bun; future npm distribution will provide the same launcher with a prebuilt engine.
 
 From this repository:
 
@@ -68,15 +67,15 @@ From this repository:
 npm test
 npm run check:docs
 
-# Bun-first local validation
+# Engine validation
 bun run test:bun
-bun run check:bun
+bun run engine:check
 ```
 
 Check another project for only changed and untracked source files:
 
 ```bash
-node scripts/check.mjs \
+bun scripts/nice-code.ts \
   --project /path/to/project \
   --changed
 ```
@@ -84,7 +83,7 @@ node scripts/check.mjs \
 Run a deliberate full scan:
 
 ```bash
-node scripts/check.mjs \
+bun scripts/nice-code.ts \
   --project /path/to/project \
   --all
 ```
@@ -114,46 +113,46 @@ Examples:
 
 ```bash
 # Fast local check
-node scripts/check.mjs --project . --changed
+bun scripts/nice-code.ts --project . --changed
 
 # Explain one finding
-node scripts/check.mjs --explain AP-LOG-001
+bun scripts/nice-code.ts --explain AP-LOG-001
 
 # CI-oriented check
-node scripts/check.mjs --project /path/to/project --ci
+bun scripts/nice-code.ts --project /path/to/project --ci
 
 # Compact output for an agent loop
-node scripts/check.mjs --project /path/to/project --changed --format agent
+bun scripts/nice-code.ts --project /path/to/project --changed --format agent
 
 # Equivalent agent shorthand
-node scripts/check.mjs --project /path/to/project --changed --agent
+bun scripts/nice-code.ts --project /path/to/project --changed --agent
 
 # Keep agent context small and focused
-node scripts/check.mjs --project /path/to/project --all --agent --status FAIL,WARN --max-findings 20
+bun scripts/nice-code.ts --project /path/to/project --all --agent --status FAIL,WARN --max-findings 20
 
 # Save an ephemeral report and summarize it
-node scripts/check.mjs --project /path/to/project --all --json > /tmp/nice-code-report.json
-node scripts/metrics.mjs /tmp/nice-code-report.json
+bun scripts/nice-code.ts --project /path/to/project --all --json > /tmp/nice-code-report.json
+bun scripts/metrics.mjs /tmp/nice-code-report.json
 ```
 
-## Bun and Node support
+## Bun and Rust support
 
 Bun is the preferred local runtime for fast script and test execution:
 
 ```bash
-bun scripts/test-checker.mjs
-bun scripts/check.mjs --project . --all
+bun scripts/test-engine.ts
+bun scripts/nice-code.ts --project . --all
 ```
 
-Node remains the compatibility baseline for the published executable:
+The Rust engine can also be run directly during development:
 
 ```bash
-node scripts/test-checker.mjs
-node scripts/check.mjs --project . --all
+cargo test --manifest-path engine/Cargo.toml
+cargo run --manifest-path engine/Cargo.toml -- --project . --all
 ```
 
-The CI matrix runs both runtimes. Nice Code does not use Bun-specific APIs, because users may
-install it with npm and run it through `npx` without Bun installed.
+The Rust engine is the only checker. Bun is used for the launcher, tests, benchmarks, and
+surrounding development tooling.
 
 Measure before making performance claims:
 
@@ -183,7 +182,7 @@ specific; they do not disable a whole category.
 For GitHub code scanning or other SARIF consumers:
 
 ```bash
-node scripts/check.mjs --project . --ci --format sarif > nice-code.sarif
+bun scripts/nice-code.ts --project . --ci --format sarif > nice-code.sarif
 ```
 
 Use `--baseline previous-report.json` when adopting Nice Code gradually. The report keeps all
@@ -193,7 +192,7 @@ See [`examples/github-actions.yml`](examples/github-actions.yml) for a starting 
 Create a baseline intentionally:
 
 ```bash
-node scripts/check.mjs --project . --all --format json --write-baseline .nice-code-baseline.json
+bun scripts/nice-code.ts --project . --all --format json --write-baseline .nice-code-baseline.json
 ```
 
 JSON reports expose `schemaVersion`, `checkerVersion`, `customFindings`, `nativeTools`, `activeProfiles`,
@@ -248,7 +247,7 @@ Add a project script that points to the checked-out Nice Code repository:
 ```json
 {
   "scripts": {
-    "nice-code:check": "node ../nice-code/scripts/check.mjs --project . --changed"
+    "nice-code:check": "bun ../nice-code/scripts/nice-code.ts --project . --changed"
   }
 }
 ```
@@ -257,7 +256,7 @@ For CI, use the checker as a repository step after installing the project’s ow
 
 ```yaml
 - name: Run Nice Code
-  run: node /path/to/nice-code/scripts/check.mjs --project . --ci
+  run: bun /path/to/nice-code/scripts/nice-code.ts --project . --ci
 ```
 
 A commit hook may run `--changed` for fast feedback. Full scans should be explicit or scheduled so
