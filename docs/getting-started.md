@@ -19,18 +19,20 @@ npx --yes @sayanmohsin/nice-code --changed --project .
 Direct macOS, Linux, and Windows binaries are available from the [latest
 GitHub Release](https://github.com/sayanmohsin/nice-code/releases/latest).
 
-## Run from a checkout
+## Run from a local checkout
 
 ```bash
 git clone https://github.com/sayanmohsin/nice-code.git
 cd nice-code
-node scripts/nice-code.mjs --changed --project /path/to/project
+npm install --global .
+nice-code --changed --project /path/to/project
 ```
 
 For a local checkout of the repository itself:
 
 ```bash
-node /path/to/nice-code/scripts/nice-code.mjs --changed --project .
+npm install --global /path/to/nice-code
+nice-code --changed --project .
 ```
 
 The launcher uses a local release/debug engine when available and can download

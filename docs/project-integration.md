@@ -14,8 +14,8 @@ package.json          # optional nice-code script
 ```json
 {
   "scripts": {
-    "nice-code": "node ../nice-code/scripts/nice-code.mjs --changed --project .",
-    "nice-code:all": "node ../nice-code/scripts/nice-code.mjs --all --project ."
+    "nice-code": "nice-code --changed --project .",
+    "nice-code:all": "nice-code --all --project ."
   }
 }
 ```

@@ -36,7 +36,7 @@ features:
 </div>
 
 <div class="nice-code-terminal">
-  <div><span class="prompt">$</span> node scripts/nice-code.mjs --changed --project .</div>
+  <div><span class="prompt">$</span> nice-code --changed --project .</div>
   <div><span class="pass">PASS</span> 0 new findings · 18 files checked</div>
   <div><span class="review">REVIEW</span> AP-ASYNC-001 src/load.ts:42 · verify independent awaits</div>
 </div>

@@ -9,6 +9,6 @@
 | Limit output    | `nice-code --all --max-findings 20 --project .`                        |
 | New findings    | `nice-code --changed --new-only --baseline baseline.json --project .`  |
 | Explain a check | `nice-code --explain AP-LOG-001`                                       |
-| CI SARIF        | `node scripts/nice-code.mjs --changed --ci --format sarif --project .` |
+| CI SARIF        | `nice-code --changed --ci --format sarif --project .`                 |
 
 The machine-readable report remains the source for automation; terminal output is a view of that report.

@@ -5,7 +5,7 @@ Rust, launcher, package, security, documentation, and full-scan checks.
 
 ```yaml
 - name: Nice Code
-  run: node scripts/nice-code.mjs --project . --changed --ci --format sarif > nice-code.sarif
+  run: nice-code --project . --changed --ci --format sarif > nice-code.sarif
 
 - name: Upload Nice Code report
   uses: github/codeql-action/upload-sarif@v3
