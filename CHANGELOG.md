@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/sayanmohsin/nice-code/compare/v0.1.5...v0.1.6) (2026-08-30)
+
+
+### Bug Fixes
+
+* resolve release version for binary builds ([ba35b38](https://github.com/sayanmohsin/nice-code/commit/ba35b384ef636ce0b16b068a7f5bb371d1127bf2))
+
 ## [0.1.5](https://github.com/sayanmohsin/nice-code/compare/v0.1.4...v0.1.5) (2026-08-30)
 
 
