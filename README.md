@@ -39,18 +39,11 @@ Read the published documentation at [sayanmohsin.github.io/nice-code](https://sa
 
 ## How it works
 
-```mermaid
-flowchart TD
-    Sources[Public engineering guidance] --> Patterns[Patterns and source registry]
-    Patterns --> Rust[Rust analysis engine]
-    Native[Project tools: compilers, formatters, linters] --> Reports[Reports and exit decision]
-    Rust --> Reports
-    Launcher[Node-compatible launcher] --> Rust
-    Bun[Bun development tooling] --> Rust
-    Reports --> Human[Human terminal review]
-    Reports --> Agent[Agent output and JSON]
-    Reports --> CI[SARIF and CI]
-```
+![Nice Code architecture](assets/architecture.svg)
+
+The source Mermaid diagram is maintained in [`docs/architecture.md`](docs/architecture.md)
+for GitHub Pages and contributors. This static SVG is included because npm's
+README renderer does not render Mermaid code fences.
 
 Every pattern is classified as:
 
@@ -357,9 +350,9 @@ Releases are currently created manually from the CLI. Prepare each supported
 platform binary, then publish only after the complete platform set is present:
 
 ```bash
-bun run release -- prepare 0.1.3
-bun run release -- prepare 0.1.3 --target x86_64-apple-darwin
-bun run release -- publish 0.1.3
+bun run release -- prepare 0.1.4
+bun run release -- prepare 0.1.4 --target x86_64-apple-darwin
+bun run release -- publish 0.1.4
 ```
 
 `publish` requires all five supported binaries, generates `checksums.txt`, and

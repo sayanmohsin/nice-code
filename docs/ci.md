@@ -20,9 +20,9 @@ Binary releases are currently created locally rather than by GitHub Actions.
 Prepare each target and publish the complete set by version:
 
 ```bash
-bun run release -- prepare 0.1.3
-bun run release -- prepare 0.1.3 --target x86_64-apple-darwin
-bun run release -- publish 0.1.3
+bun run release -- prepare 0.1.4
+bun run release -- prepare 0.1.4 --target x86_64-apple-darwin
+bun run release -- publish 0.1.4
 ```
 
 The publish command refuses incomplete platform sets, creates SHA-256
