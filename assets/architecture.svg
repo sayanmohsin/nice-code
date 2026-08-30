@@ -56,8 +56,8 @@
   <path d="M278 435 C330 435 330 300 390 300" class="arrow"/>
   <path d="M515 336 V400" class="arrow"/>
   <path d="M565 400 V336" class="arrow"/>
-  <path d="M690 250 H840" class="arrow"/>
-  <path d="M690 278 H840" class="arrow"/>
-  <path d="M690 306 H840" class="arrow"/>
+  <path d="M690 240 L840 164" class="arrow"/>
+  <path d="M690 278 L840 294" class="arrow"/>
+  <path d="M690 316 L840 424" class="arrow"/>
   </g>
 </svg>
