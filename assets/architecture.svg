@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="540" viewBox="0 0 1200 540" role="img" aria-labelledby="title desc">
   <title id="title">How Nice Code works</title>
-  <desc id="desc">The Node launcher runs the Rust analysis engine against a target project. The engine uses sources and patterns, invokes native project tools in CI mode, and produces terminal, agent, JSON, and SARIF reports.</desc>
+  <desc id="desc">The Node launcher runs the Rust analysis engine against a target project. The engine uses sources and patterns, optionally invokes native project tools in CI mode, folds their status into one report, and produces terminal, agent, JSON, and SARIF outputs.</desc>
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0" stop-color="#111827"/>
@@ -16,9 +16,8 @@
       .arrow { stroke: #94a3b8; stroke-width: 2; fill: none; marker-end: url(#arrow); }
     </style>
   </defs>
-  <rect width="1200" height="620" rx="18" fill="url(#bg)"/>
-  <text x="48" y="58" class="label" font-size="28">How Nice Code works</text>
-  <text x="48" y="86" class="small">One language-neutral interface, powered by a Rust analysis engine.</text>
+  <rect width="1200" height="540" rx="18" fill="url(#bg)"/>
+  <g transform="translate(0 -70)">
 
   <rect x="48" y="120" width="230" height="88" class="box" fill="#172554" stroke="#60a5fa"/>
   <text x="163" y="156" text-anchor="middle" class="label">Sources</text>
@@ -55,9 +54,10 @@
   <path d="M278 164 C330 164 330 250 390 250" class="arrow"/>
   <path d="M278 294 H390" class="arrow"/>
   <path d="M278 435 C330 435 330 300 390 300" class="arrow"/>
-  <path d="M540 336 V400" class="arrow"/>
-  <path d="M690 435 H840" class="arrow"/>
+  <path d="M515 336 V400" class="arrow"/>
+  <path d="M565 400 V336" class="arrow"/>
   <path d="M690 250 H840" class="arrow"/>
   <path d="M690 278 H840" class="arrow"/>
   <path d="M690 306 H840" class="arrow"/>
+  </g>
 </svg>
