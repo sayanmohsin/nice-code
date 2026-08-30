@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/sayanmohsin/nice-code/compare/v0.1.7...v0.1.8) (2026-08-30)
+
+
+### Bug Fixes
+
+* scope GitHub release commands ([a9798c1](https://github.com/sayanmohsin/nice-code/commit/a9798c10dba5b1f47f7b9d777c7efe27db4f5f70))
+
 ## [0.1.7](https://github.com/sayanmohsin/nice-code/compare/v0.1.6...v0.1.7) (2026-08-30)
 
 
