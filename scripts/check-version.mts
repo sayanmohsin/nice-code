@@ -12,7 +12,7 @@ if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(v
   throw new Error("package.json must contain a valid SemVer version");
 if (!new RegExp(`^version = "${version.replaceAll(".", "\\.")}"`, "m").test(cargo))
   throw new Error(`engine/Cargo.toml is not synchronized with package.json (${version})`);
-if (!new RegExp(`^version: ${version.replaceAll(".", "\\.")}$`, "m").test(skill))
+if (!new RegExp(`^version: ${version.replaceAll(".", "\\.")}(?:\\s+#.*)?$`, "m").test(skill))
   throw new Error(`SKILL.md is not synchronized with package.json (${version})`);
 if (tag?.startsWith("v") && tag.slice(1) !== version)
   throw new Error(`Git tag ${tag} does not match package.json (${version})`);

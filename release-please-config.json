@@ -2,10 +2,17 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "component": "nice-code",
+      "include-component-in-tag": false,
       "tag-prefix": "v",
       "changelog-path": "CHANGELOG.md",
-      "extra-files": ["engine/Cargo.toml", "SKILL.md"]
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "engine/Cargo.toml",
+          "jsonpath": "$.package.version"
+        },
+        "SKILL.md"
+      ]
     }
   }
 }
