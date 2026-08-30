@@ -56,7 +56,9 @@ jobs:
       - name: Resolve release version
         id: version
         if: steps.release.outputs.releases_created == 'true'
-        run: echo "version=$(node -e \"console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)\")" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(node -p 'JSON.parse(require("fs").readFileSync("package.json", "utf8")).version')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Normalize manual retry
         id: manual
         if: inputs.publish_version != ''
