@@ -51,7 +51,13 @@ jobs:
           suffix=""
           if [[ "${{ matrix.target }}" == *windows* ]]; then suffix=".exe"; fi
           cp "engine/target/${{ matrix.target }}/release/nice-code-engine${suffix}" "release/nice-code-engine-${{ matrix.target }}${suffix}"
-          (cd release && shasum -a 256 "nice-code-engine-${{ matrix.target }}${suffix}" > "checksum-${{ matrix.target }}.txt")
+          asset="nice-code-engine-${{ matrix.target }}${suffix}"
+          if [[ "${{ matrix.target }}" == *windows* ]]; then
+            hash=$(powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 -LiteralPath 'release/$asset').Hash.ToLower()")
+            printf '%s  %s\n' "$hash" "$asset" > "release/checksum-${{ matrix.target }}.txt"
+          else
+            (cd release && shasum -a 256 "$asset" > "checksum-${{ matrix.target }}.txt")
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: engine-${{ matrix.target }}
