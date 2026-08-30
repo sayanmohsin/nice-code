@@ -1,0 +1,6 @@
+engine/target/
+release/
+docs/
+.github/
+.git/
+*.tgz

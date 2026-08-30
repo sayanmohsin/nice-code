@@ -23,10 +23,7 @@
     "node": ">=20"
   },
   "files": [
-    "engine/",
-    "patterns/",
-    "scripts/",
-    "sources/",
+    "scripts/nice-code.mjs",
     "SKILL.md",
     "README.md",
     "LICENSE"
