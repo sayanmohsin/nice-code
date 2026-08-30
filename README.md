@@ -345,6 +345,14 @@ artifacts; only a small trend summary should be committed when needed.
 
 ## Future npm package
 
+The public npm package is scoped as `@sayanmohsin/nice-code`, while the
+installed command remains `nice-code`:
+
+```bash
+npm install --global @sayanmohsin/nice-code
+nice-code --project .
+```
+
 Releases are currently created manually from the CLI. Prepare each supported
 platform binary, then publish only after the complete platform set is present:
 
