@@ -349,9 +349,9 @@ Releases are currently created manually from the CLI. Prepare each supported
 platform binary, then publish only after the complete platform set is present:
 
 ```bash
-bun run release -- prepare 0.1.2
-bun run release -- prepare 0.1.2 --target x86_64-apple-darwin
-bun run release -- publish 0.1.2
+bun run release -- prepare 0.1.3
+bun run release -- prepare 0.1.3 --target x86_64-apple-darwin
+bun run release -- publish 0.1.3
 ```
 
 `publish` requires all five supported binaries, generates `checksums.txt`, and

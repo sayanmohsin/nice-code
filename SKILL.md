@@ -1,7 +1,7 @@
 ---
 name: nice-code
 description: Source-backed engineering guardrails for reviewing AI-generated code, especially logging, errors, async work, state, persistence, security, testing, performance, APIs, and reliability.
-version: 0.1.2
+version: 0.1.3
 license: MIT
 ---
 
