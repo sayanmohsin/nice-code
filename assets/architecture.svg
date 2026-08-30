@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
   <title id="title">How Nice Code works</title>
-  <desc id="desc">Sources and project tools feed the Rust analysis engine through a Node launcher. Findings become terminal, agent, JSON, and SARIF reports.</desc>
+  <desc id="desc">The Node launcher runs the Rust analysis engine against a target project. The engine uses sources and patterns, invokes native project tools in CI mode, and produces terminal, agent, JSON, and SARIF reports.</desc>
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0" stop-color="#111827"/>
@@ -20,13 +20,17 @@
   <text x="48" y="58" class="label" font-size="28">How Nice Code works</text>
   <text x="48" y="86" class="small">One language-neutral interface, powered by a Rust analysis engine.</text>
 
-  <rect x="48" y="142" width="230" height="88" class="box" fill="#172554" stroke="#60a5fa"/>
-  <text x="163" y="178" text-anchor="middle" class="label">Sources</text>
-  <text x="163" y="202" text-anchor="middle" class="small">Guidance and patterns</text>
+  <rect x="48" y="120" width="230" height="88" class="box" fill="#172554" stroke="#60a5fa"/>
+  <text x="163" y="156" text-anchor="middle" class="label">Sources</text>
+  <text x="163" y="180" text-anchor="middle" class="small">Guidance and patterns</text>
 
-  <rect x="48" y="326" width="230" height="88" class="box" fill="#422006" stroke="#f59e0b"/>
-  <text x="163" y="362" text-anchor="middle" class="label">Project tools</text>
-  <text x="163" y="386" text-anchor="middle" class="small">Compilers and linters</text>
+  <rect x="48" y="250" width="230" height="88" class="box" fill="#172554" stroke="#60a5fa"/>
+  <text x="163" y="286" text-anchor="middle" class="label">Target project</text>
+  <text x="163" y="310" text-anchor="middle" class="small">Source files and config</text>
+
+  <rect x="48" y="380" width="230" height="88" class="box" fill="#422006" stroke="#f59e0b"/>
+  <text x="163" y="416" text-anchor="middle" class="label">Native tools</text>
+  <text x="163" y="440" text-anchor="middle" class="small">Compilers and linters</text>
 
   <rect x="390" y="220" width="300" height="116" class="box" fill="#064e3b" stroke="#34d399"/>
   <text x="540" y="266" text-anchor="middle" class="label">Rust analysis engine</text>
@@ -36,21 +40,23 @@
   <rect x="390" y="406" width="300" height="70" class="box" fill="#3b0764" stroke="#c084fc"/>
   <text x="540" y="449" text-anchor="middle" class="label">Node launcher</text>
 
-  <rect x="840" y="142" width="300" height="88" class="box" fill="#312e81" stroke="#818cf8"/>
+  <rect x="840" y="120" width="300" height="88" class="box" fill="#312e81" stroke="#818cf8"/>
   <text x="990" y="178" text-anchor="middle" class="label">Human terminal</text>
   <text x="990" y="202" text-anchor="middle" class="small">Readable findings</text>
 
-  <rect x="840" y="256" width="300" height="88" class="box" fill="#164e63" stroke="#22d3ee"/>
-  <text x="990" y="292" text-anchor="middle" class="label">Agents</text>
-  <text x="990" y="316" text-anchor="middle" class="small">Agent format and JSON</text>
+  <rect x="840" y="250" width="300" height="88" class="box" fill="#164e63" stroke="#22d3ee"/>
+  <text x="990" y="286" text-anchor="middle" class="label">Agents</text>
+  <text x="990" y="310" text-anchor="middle" class="small">Agent format and JSON</text>
 
-  <rect x="840" y="370" width="300" height="88" class="box" fill="#3f3f46" stroke="#a1a1aa"/>
-  <text x="990" y="406" text-anchor="middle" class="label">CI</text>
-  <text x="990" y="430" text-anchor="middle" class="small">SARIF and exit status</text>
+  <rect x="840" y="380" width="300" height="88" class="box" fill="#3f3f46" stroke="#a1a1aa"/>
+  <text x="990" y="416" text-anchor="middle" class="label">CI</text>
+  <text x="990" y="440" text-anchor="middle" class="small">SARIF and exit status</text>
 
-  <path d="M278 186 H390" class="arrow"/>
-  <path d="M278 370 C330 370 330 300 390 300" class="arrow"/>
+  <path d="M278 164 C330 164 330 250 390 250" class="arrow"/>
+  <path d="M278 294 H390" class="arrow"/>
   <path d="M540 406 V336" class="arrow"/>
+  <path d="M390 286 C330 286 330 424 278 424" class="arrow"/>
+  <path d="M278 424 C430 424 720 424 840 424" class="arrow"/>
   <path d="M690 250 H840" class="arrow"/>
   <path d="M690 278 H840" class="arrow"/>
   <path d="M690 306 H840" class="arrow"/>

@@ -21,21 +21,7 @@ review on top of Clippy, Biome, TypeScript, Dart Analyzer, `gofmt`, framework
 checks, and project-specific tests. Node.js provides the user-facing launcher;
 Bun is used for development tooling around that engine.
 
-## Documentation site
-
-The repository includes a VitePress documentation site for the CLI, project
-integration, agent workflow, reports, audits, and pattern lifecycle.
-
-```bash
-pnpm install --dir docs
-pnpm docs:dev
-pnpm docs:build
-```
-
-The site is configured for GitHub Pages. The root README is the repository
-entry point; the docs site is the task-oriented guide.
-
-Read the published documentation at [sayanmohsin.github.io/nice-code](https://sayanmohsin.github.io/nice-code/).
+Read the task-oriented [documentation](https://sayanmohsin.github.io/nice-code/).
 
 ## Download
 
