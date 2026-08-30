@@ -18,5 +18,5 @@ development.
 ```bash
 npm run check:docs
 npm test
-bun scripts/nice-code.ts --all --project . --format json
+node scripts/nice-code.mjs --all --project . --format json
 ```

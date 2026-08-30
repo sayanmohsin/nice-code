@@ -1,8 +1,8 @@
 # Architecture
 
 Nice Code keeps the review path small and explicit. Rust owns discovery,
-parsing, rules, reports, and exit decisions. Bun only launches the engine and
-supports development, testing, and future packaging.
+parsing, rules, reports, and exit decisions. Node.js runs the user-facing
+launcher; Bun supports development, testing, and TypeScript utilities.
 
 ```mermaid
 flowchart LR
@@ -11,7 +11,7 @@ flowchart LR
     Engine --> Findings[Deterministic findings]
     Native[Native project tools] --> Decision[Exit decision]
     Findings --> Decision
-    Launcher[Bun launcher] --> Engine
+    Launcher[Node-compatible launcher] --> Engine
     Decision --> Text[Human terminal output]
     Decision --> Agent[Agent format / JSON]
     Decision --> Sarif[SARIF for CI]

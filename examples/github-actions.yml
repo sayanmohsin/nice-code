@@ -23,7 +23,7 @@ jobs:
       - name: Install the project tools
         run: true
       - name: Run Nice Code
-        run: bun /path/to/nice-code/scripts/nice-code.ts --project . --ci --format sarif > nice-code.sarif
+        run: node /path/to/nice-code/scripts/nice-code.mjs --project . --ci --format sarif > nice-code.sarif
       - name: Upload Nice Code results
         if: always()
         uses: github/codeql-action/upload-sarif@v3

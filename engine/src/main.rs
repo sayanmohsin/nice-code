@@ -615,7 +615,7 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
             findings.push(finding("AP-SEC-001", "Possible hardcoded secret", "security", "critical", "FAIL", path, index + 1, "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", "https://docs.aws.amazon.com/wellarchitected/latest/framework/security.html"));
         }
     }
-    if is_js(path) && !context.is_test {
+    if is_js(path) && !context.is_test && !context.is_tooling {
         let awaits = content
             .lines()
             .filter(|line| {
@@ -965,6 +965,17 @@ mod tests {
             &mut parser,
         );
         assert!(findings.iter().any(|f| f.id == "AP-ASYNC-001"));
+    }
+
+    #[test]
+    fn ignores_async_heuristic_for_tooling() {
+        let mut parser = SyntaxParser::new();
+        let findings = analyze_with_parser(
+            "scripts/launcher.mjs",
+            "const checks = await fetchChecks();\nconst binary = await fetchBinary(checks);",
+            &mut parser,
+        );
+        assert!(!findings.iter().any(|f| f.id == "AP-ASYNC-001"));
     }
 
     #[test]

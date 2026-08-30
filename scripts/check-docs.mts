@@ -1,12 +1,22 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const requiredSections = ["## Problem", "## Pattern", "## Avoid", "## Example", "## Enforcement", "## Exceptions", "## Sources"];
+const requiredSections = [
+  "## Problem",
+  "## Pattern",
+  "## Avoid",
+  "## Example",
+  "## Enforcement",
+  "## Exceptions",
+  "## Sources",
+];
 const patternDirectory = join(process.cwd(), "patterns");
-const files = readdirSync(patternDirectory).filter((file) => file.endsWith(".md") && file !== "index.md");
-const errors = [];
+const files = readdirSync(patternDirectory).filter(
+  (file) => file.endsWith(".md") && file !== "index.md",
+);
+const errors: string[] = [];
 
 for (const file of files) {
   const content = readFileSync(join(patternDirectory, file), "utf8");

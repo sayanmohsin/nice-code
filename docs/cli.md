@@ -1,15 +1,17 @@
 # CLI
 
-Nice Code is a lightweight Rust CLI exposed directly or through the Bun launcher.
+Nice Code is a lightweight Rust CLI exposed directly or through the
+Node-compatible launcher. Bun is only needed for repository development
+utilities, not for normal users.
 Human output is compact and styled only in an interactive terminal. Agent and CI
 output remains deterministic and machine-friendly.
 
 ```bash
-bun scripts/nice-code.ts --changed --project .
-bun scripts/nice-code.ts --all --project .
-bun scripts/nice-code.ts --all --verbose --project .
-bun scripts/nice-code.ts --all --format agent --project .
-bun scripts/nice-code.ts --changed --ci --format sarif --project . > nice-code.sarif
+node scripts/nice-code.mjs --changed --project .
+node scripts/nice-code.mjs --all --project .
+node scripts/nice-code.mjs --all --verbose --project .
+node scripts/nice-code.mjs --all --format agent --project .
+node scripts/nice-code.mjs --changed --ci --format sarif --project . > nice-code.sarif
 nice-code --explain AP-LOG-001
 nice-code --all --format json --write-baseline .nice-code-baseline.json
 nice-code --changed --new-only --baseline .nice-code-baseline.json --format agent

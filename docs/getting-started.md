@@ -5,13 +5,13 @@
 ```bash
 git clone https://github.com/sayanmohsin/nice-code.git
 cd nice-code
-bun scripts/nice-code.ts --changed --project /path/to/project
+node scripts/nice-code.mjs --changed --project /path/to/project
 ```
 
 For a local checkout of the repository itself:
 
 ```bash
-bun /path/to/nice-code/scripts/nice-code.ts --changed --project .
+node /path/to/nice-code/scripts/nice-code.mjs --changed --project .
 ```
 
 The launcher uses a local release/debug engine when available and can download

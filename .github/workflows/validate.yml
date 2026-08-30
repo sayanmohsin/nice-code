@@ -20,4 +20,4 @@ jobs:
       - name: Run Bun support tests
         run: bun scripts/test-engine.ts
       - name: Validate documentation
-        run: bun scripts/check-docs.mjs
+        run: bun scripts/check-docs.mts

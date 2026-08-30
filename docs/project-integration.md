@@ -13,8 +13,8 @@ package.json          # optional nice-code script
 ```json
 {
   "scripts": {
-    "nice-code": "bun ../nice-code/scripts/nice-code.ts --changed --project .",
-    "nice-code:all": "bun ../nice-code/scripts/nice-code.ts --all --project ."
+    "nice-code": "node ../nice-code/scripts/nice-code.mjs --changed --project .",
+    "nice-code:all": "node ../nice-code/scripts/nice-code.mjs --all --project ."
   }
 }
 ```
