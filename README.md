@@ -37,6 +37,36 @@ entry point; the docs site is the task-oriented guide.
 
 Read the published documentation at [sayanmohsin.github.io/nice-code](https://sayanmohsin.github.io/nice-code/).
 
+## Download
+
+### npm launcher
+
+The simplest installation uses Node.js 20 or newer. Bun, Cargo, and Rust are
+not required on the user's machine:
+
+```bash
+npm install --global @sayanmohsin/nice-code
+nice-code --help
+nice-code --changed --project .
+```
+
+For a one-off run without a global install:
+
+```bash
+npx --yes @sayanmohsin/nice-code --changed --project .
+```
+
+The launcher downloads and verifies the matching Rust engine from the [latest
+GitHub Release](https://github.com/sayanmohsin/nice-code/releases/latest), then
+caches it locally.
+
+### Direct Rust binaries
+
+You can also download a platform binary from the [latest GitHub
+Release](https://github.com/sayanmohsin/nice-code/releases/latest). Available
+targets are macOS ARM64 and x64, Linux ARM64 and x64, and Windows x64. Verify
+the download with the published `checksums.txt` file.
+
 ## How it works
 
 ![Nice Code architecture](assets/architecture.svg)
@@ -90,6 +120,13 @@ node scripts/nice-code.mjs \
 
 The checker detects Rust, Go, Dart, TypeScript, React, Astro, and Svelte projects from their
 standard manifest files. It scans supported source files and does not modify the target project.
+
+See the complete built-in reference with:
+
+```bash
+nice-code --help
+nice-code --version
+```
 
 ## Checker modes
 

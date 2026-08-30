@@ -1,6 +1,25 @@
 # Getting started
 
-## Run from GitHub
+## Install the CLI
+
+The public npm launcher requires Node.js 20 or newer. It downloads the matching
+verified Rust engine automatically; users do not need Bun, Cargo, or Rust.
+
+```bash
+npm install --global @sayanmohsin/nice-code
+nice-code --help
+```
+
+For a one-off invocation:
+
+```bash
+npx --yes @sayanmohsin/nice-code --changed --project .
+```
+
+Direct macOS, Linux, and Windows binaries are available from the [latest
+GitHub Release](https://github.com/sayanmohsin/nice-code/releases/latest).
+
+## Run from a checkout
 
 ```bash
 git clone https://github.com/sayanmohsin/nice-code.git

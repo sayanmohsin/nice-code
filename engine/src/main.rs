@@ -70,49 +70,87 @@ enum Format {
 #[command(
     name = "nice-code",
     version,
-    about = "Fast multi-language engineering guardrails",
-    after_help = "Examples:\n  nice-code --changed\n  nice-code --all --format agent\n  nice-code --changed --ci --format sarif > nice-code.sarif\n  nice-code --explain AP-LOG-001"
+    about = "Fast, source-backed engineering guardrails",
+    long_about = "Review JavaScript, TypeScript, Rust, Go, and Dart projects with a fast Rust engine.\n\nUse --changed for a focused local review, --all for a deliberate full scan, and --format agent or --format json for automation.",
+    after_help = "Examples:\n  nice-code --changed --project .\n  nice-code --all --project .\n  nice-code --changed --format agent --project .\n  nice-code --changed --ci --format sarif --project . > nice-code.sarif\n  nice-code --explain AP-LOG-001\n\nExit status is non-zero only when the report's exit decision is blocked."
 )]
 struct Args {
-    #[arg(long, default_value = ".")]
+    #[arg(
+        long,
+        default_value = ".",
+        value_name = "PATH",
+        help = "Project directory to inspect"
+    )]
     project: PathBuf,
-    #[arg(long, conflicts_with = "all")]
+    #[arg(
+        long,
+        conflicts_with = "all",
+        help = "Inspect changed and untracked supported files"
+    )]
     changed: bool,
-    #[arg(long)]
+    #[arg(long, help = "Inspect all supported files in the project")]
     all: bool,
-    #[arg(long)]
+    #[arg(
+        long,
+        help = "Run available native project tools and include their status"
+    )]
     ci: bool,
-    #[arg(long, value_enum, default_value_t = Format::Text)]
+    #[arg(long, value_enum, default_value_t = Format::Text, help = "Output format: text, json, sarif, or agent")]
     format: Format,
-    #[arg(long, conflicts_with = "format")]
+    #[arg(long, conflicts_with = "format", help = "Shortcut for --format json")]
     json: bool,
-    #[arg(long)]
+    #[arg(long, help = "Shortcut for --format agent")]
     agent: bool,
-    #[arg(long)]
+    #[arg(long, help = "Include findings marked REVIEW in agent output")]
     include_review: bool,
-    #[arg(long)]
+    #[arg(long, help = "Show all human-readable findings")]
     verbose: bool,
-    #[arg(long, value_delimiter = ',')]
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_name = "STATUS,...",
+        help = "Filter findings by status"
+    )]
     status: Option<Vec<String>>,
-    #[arg(long)]
+    #[arg(long, value_name = "N", help = "Limit displayed findings")]
     max_findings: Option<usize>,
-    #[arg(long)]
+    #[arg(
+        long,
+        help = "Print discovery, analysis, native-tool, and total timings"
+    )]
     timings: bool,
-    #[arg(long, conflicts_with = "no_cache")]
+    #[arg(
+        long,
+        conflicts_with = "no_cache",
+        help = "Reuse safe local results for unchanged files"
+    )]
     cache: bool,
-    #[arg(long)]
+    #[arg(long, help = "Disable local result caching")]
     no_cache: bool,
-    #[arg(long, conflicts_with = "no_color")]
+    #[arg(long, conflicts_with = "no_color", help = "Force terminal colors")]
     color: bool,
-    #[arg(long, conflicts_with = "color")]
+    #[arg(long, conflicts_with = "color", help = "Disable terminal colors")]
     no_color: bool,
-    #[arg(long, value_name = "CHECK_ID")]
+    #[arg(
+        long,
+        value_name = "CHECK_ID",
+        help = "Explain a check and show its source"
+    )]
     explain: Option<String>,
-    #[arg(long, value_name = "PATH", requires = "new_only")]
+    #[arg(
+        long,
+        value_name = "PATH",
+        requires = "new_only",
+        help = "Baseline file used with --new-only"
+    )]
     baseline: Option<PathBuf>,
-    #[arg(long)]
+    #[arg(long, help = "Show only findings absent from the baseline")]
     new_only: bool,
-    #[arg(long, value_name = "PATH")]
+    #[arg(
+        long,
+        value_name = "PATH",
+        help = "Write the current findings as a baseline"
+    )]
     write_baseline: Option<PathBuf>,
 }
 
