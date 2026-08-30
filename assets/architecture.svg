@@ -16,7 +16,7 @@
       .arrow { stroke: #94a3b8; stroke-width: 2; fill: none; marker-end: url(#arrow); }
     </style>
   </defs>
-  <rect width="1200" height="560" rx="18" fill="url(#bg)"/>
+  <rect width="1200" height="620" rx="18" fill="url(#bg)"/>
   <text x="48" y="58" class="label" font-size="28">How Nice Code works</text>
   <text x="48" y="86" class="small">One language-neutral interface, powered by a Rust analysis engine.</text>
 
@@ -28,17 +28,17 @@
   <text x="163" y="286" text-anchor="middle" class="label">Target project</text>
   <text x="163" y="310" text-anchor="middle" class="small">Source files and config</text>
 
-  <rect x="48" y="380" width="230" height="88" class="box" fill="#422006" stroke="#f59e0b"/>
-  <text x="163" y="416" text-anchor="middle" class="label">Native tools</text>
-  <text x="163" y="440" text-anchor="middle" class="small">Compilers and linters</text>
+  <rect x="390" y="400" width="300" height="70" class="box" fill="#422006" stroke="#f59e0b"/>
+  <text x="540" y="443" text-anchor="middle" class="label">Native tools</text>
+  <text x="540" y="462" text-anchor="middle" class="small">Compilers and linters</text>
 
   <rect x="390" y="220" width="300" height="116" class="box" fill="#064e3b" stroke="#34d399"/>
   <text x="540" y="266" text-anchor="middle" class="label">Rust analysis engine</text>
   <text x="540" y="292" text-anchor="middle" class="small">Discovery · parsing · rules</text>
   <text x="540" y="314" text-anchor="middle" class="small">Reports · exit decisions</text>
 
-  <rect x="390" y="406" width="300" height="70" class="box" fill="#3b0764" stroke="#c084fc"/>
-  <text x="540" y="449" text-anchor="middle" class="label">Node launcher</text>
+  <rect x="48" y="400" width="230" height="70" class="box" fill="#3b0764" stroke="#c084fc"/>
+  <text x="163" y="443" text-anchor="middle" class="label">Node launcher</text>
 
   <rect x="840" y="120" width="300" height="88" class="box" fill="#312e81" stroke="#818cf8"/>
   <text x="990" y="178" text-anchor="middle" class="label">Human terminal</text>
@@ -54,9 +54,9 @@
 
   <path d="M278 164 C330 164 330 250 390 250" class="arrow"/>
   <path d="M278 294 H390" class="arrow"/>
-  <path d="M540 406 V336" class="arrow"/>
-  <path d="M390 286 C330 286 330 424 278 424" class="arrow"/>
-  <path d="M278 424 C430 424 720 424 840 424" class="arrow"/>
+  <path d="M278 435 C330 435 330 300 390 300" class="arrow"/>
+  <path d="M540 336 V400" class="arrow"/>
+  <path d="M690 435 H840" class="arrow"/>
   <path d="M690 250 H840" class="arrow"/>
   <path d="M690 278 H840" class="arrow"/>
   <path d="M690 306 H840" class="arrow"/>
