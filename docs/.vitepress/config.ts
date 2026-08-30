@@ -59,6 +59,7 @@ export default defineConfig({
           text: "Operations",
           items: [
             { text: "CI", link: "/ci" },
+            { text: "Releasing", link: "/releasing" },
             { text: "Audits", link: "/audits" },
             { text: "Metrics", link: "/metrics" },
             { text: "Troubleshooting", link: "/troubleshooting" },

@@ -1,6 +1,7 @@
 # CI
 
-Run a changed-file check on pull requests and a full scan on a scheduled audit.
+Pull requests run the fast validation gate. Pushes to `main` run the complete
+Rust, launcher, package, security, documentation, and full-scan checks.
 
 ```yaml
 - name: Nice Code
@@ -14,16 +15,27 @@ Run a changed-file check on pull requests and a full scan on a scheduled audit.
 
 Keep `REVIEW` findings visible without blocking automatically. Make a finding blocking only after it is high-confidence, non-duplicative, and useful to the project.
 
-## Manual binary releases
+## Automated releases
 
-Binary releases are currently created locally rather than by GitHub Actions.
-Prepare each target and publish the complete set by version:
+Release Please owns version changes. After a release PR is merged, GitHub
+Actions builds the five supported Rust binaries, creates the GitHub Release,
+generates checksums, and publishes the scoped npm package.
 
-```bash
-bun run release -- prepare 0.1.4
-bun run release -- prepare 0.1.4 --target x86_64-apple-darwin
-bun run release -- publish 0.1.4
-```
+The workflow is `.github/workflows/release.yml`. To retry an existing version,
+open **Actions → Release → Run workflow** and enter the full version in
+`publish_version`, for example `0.1.4`. Retries replace existing GitHub assets
+and skip an already-published npm version.
 
-The publish command refuses incomplete platform sets, creates SHA-256
-checksums, and uploads the assets with `gh release create`.
+### npm Trusted Publishing
+
+Configure the package's trusted publisher with:
+
+- Publisher: GitHub Actions
+- User: `sayanmohsin`
+- Repository: `nice-code`
+- Workflow filename: `release.yml`
+- Environment: `npm-publish`
+
+The workflow uses OIDC provenance and does not require an npm token or OTP.
+For the existing GitHub `v0.1.4` release, configure this first, then dispatch
+the workflow with `publish_version=0.1.4`.

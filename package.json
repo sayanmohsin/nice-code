@@ -42,6 +42,7 @@
     "test": "cargo test --manifest-path engine/Cargo.toml",
     "test:bun": "bun scripts/test-engine.ts",
     "check:docs": "bun scripts/check-docs.mts",
+    "check:version": "bun scripts/check-version.mts",
     "pack:check": "npm pack --dry-run",
     "release": "bun scripts/release.mts",
     "benchmark": "bun scripts/benchmark.ts",

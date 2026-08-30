@@ -12,8 +12,8 @@ The recommended policy is advisory until a project has measured signal quality. 
 
 No. The GitHub-checkout launcher uses Node.js, and users can also run the
 prebuilt Rust GitHub Release binary directly. Bun is only used for repository
-development utilities. npm distribution will provide the same launcher after
-the release contract is stable.
+development utilities. The public npm package provides the same launcher and
+requires only Node.js on the user's machine.
 
 ### Does it send source code over the network?
 

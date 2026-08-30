@@ -5,19 +5,57 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  engine:
-    name: Rust engine and Bun support
+  fast:
+    name: Fast validation
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
       - uses: dtolnay/rust-toolchain@stable
-      - name: Run Rust tests
-        run: cargo test --manifest-path engine/Cargo.toml
-      - name: Run Bun support tests
-        run: bun scripts/test-engine.ts
-      - name: Validate documentation
-        run: bun scripts/check-docs.mts
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --manifest-path engine/Cargo.toml -- --check
+      - run: cargo test --manifest-path engine/Cargo.toml
+      - run: cargo clippy --manifest-path engine/Cargo.toml --all-targets -- -D warnings
+      - run: bun scripts/test-engine.ts
+      - run: bun scripts/check-docs.mts
+      - run: bun scripts/check-version.mts
+      - run: npm pack --dry-run
+
+  full:
+    name: Full main validation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --manifest-path engine/Cargo.toml -- --check
+      - run: cargo check --manifest-path engine/Cargo.toml
+      - run: cargo test --manifest-path engine/Cargo.toml
+      - run: cargo clippy --manifest-path engine/Cargo.toml --all-targets -- -D warnings
+      - run: cargo doc --manifest-path engine/Cargo.toml --no-deps
+      - run: cargo build --release --manifest-path engine/Cargo.toml
+      - run: bun scripts/test-engine.ts
+      - run: bun scripts/check-docs.mts
+      - run: bun scripts/check-version.mts
+      - run: node scripts/nice-code.mjs --all --project . --format agent
+      - run: npm pack --dry-run
+      - run: npm audit --audit-level=high
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - run: pnpm --dir docs install --frozen-lockfile
+      - run: pnpm --dir docs format:check
+      - run: pnpm --dir docs build

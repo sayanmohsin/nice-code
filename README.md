@@ -18,8 +18,8 @@ formatters, compilers, and linters cannot fully judge:
 Nice Code is deliberately not a replacement for language tooling. Its Rust
 engine is the only analysis engine and adds a conservative, evidence-oriented
 review on top of Clippy, Biome, TypeScript, Dart Analyzer, `gofmt`, framework
-checks, and project-specific tests. Bun provides the launcher and development
-tooling around that engine.
+checks, and project-specific tests. Node.js provides the user-facing launcher;
+Bun is used for development tooling around that engine.
 
 ## Documentation site
 
@@ -58,8 +58,8 @@ architectural or performance property.
 
 Nice Code uses a Rust engine for analysis and a Node-compatible launcher for
 checkout and package usage. Bun remains the preferred development runtime for
-TypeScript utilities. GitHub Releases provide the prebuilt engines; npm
-distribution is planned for a later release.
+TypeScript utilities. GitHub Releases provide the prebuilt engines, and the
+public npm package provides the matching launcher. End users need Node.js only.
 
 From this repository:
 
@@ -336,7 +336,7 @@ full scans, compare findings with native tools, measure false positives, and dec
 pattern should be adopted, revised, deprecated, or rejected. Detailed reports stay in local or CI
 artifacts; only a small trend summary should be committed when needed.
 
-## Future npm package
+## npm package and releases
 
 The public npm package is scoped as `@sayanmohsin/nice-code`, while the
 installed command remains `nice-code`:
@@ -346,31 +346,18 @@ npm install --global @sayanmohsin/nice-code
 nice-code --project .
 ```
 
-Releases are currently created manually from the CLI. Prepare each supported
-platform binary, then publish only after the complete platform set is present:
-
-```bash
-bun run release -- prepare 0.1.4
-bun run release -- prepare 0.1.4 --target x86_64-apple-darwin
-bun run release -- publish 0.1.4
-```
-
-`publish` requires all five supported binaries, generates `checksums.txt`, and
-uses the authenticated GitHub CLI to create the versioned Release. The release
-assets are not committed to Git. Cross-compilation toolchains or separate build
-machines are required for targets that are different from the release host.
-
-npm publication is intentionally deferred while the Rust binary contract and
-cross-platform release process mature. The package metadata and launcher are
-being kept compatible with that future distribution. Before publishing, inspect
-the exact tarball:
+Release Please owns version changes. Merging its release PR builds all five
+platform binaries, creates the GitHub Release with checksums, and publishes the
+scoped npm package through GitHub Actions Trusted Publishing. To retry an
+existing version, use the `publish_version` workflow input described in
+[`docs/ci.md`](docs/ci.md). Before publishing, inspect the exact tarball:
 
 ```bash
 npm run pack:check
 ```
 
-When npm publication is enabled, the same Node-compatible launcher will provide
-the `nice-code` command without changing the Rust engine interface.
+The Node-compatible launcher provides the `nice-code` command without requiring
+Bun or Rust on the user's machine.
 
 ## License
 

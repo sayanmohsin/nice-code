@@ -1,7 +1,8 @@
 # Project integration
 
-Nice Code currently supports a direct checkout or Git submodule. npm
-distribution is planned after the binary release contract is stable.
+Nice Code supports a direct checkout, Git submodule, or the public scoped npm
+package. The npm launcher downloads the matching verified Rust binary, so users
+do not need Bun, Cargo, or Rust installed.
 Recommended project files are:
 
 ```text

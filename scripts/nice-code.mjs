@@ -14,8 +14,18 @@ import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const VERSION = "0.1.4";
 const REPOSITORY = "sayanmohsin/nice-code";
+
+const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+async function packageVersion() {
+  const packageJson = JSON.parse(
+    await readFile(join(PACKAGE_ROOT, "package.json"), "utf8"),
+  );
+  if (typeof packageJson.version !== "string")
+    throw new Error("Nice Code package.json does not contain a valid version.");
+  return packageJson.version;
+}
 
 function platformTarget() {
   const targets = {
@@ -43,28 +53,28 @@ async function exists(path) {
 }
 
 function localCandidates() {
-  const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   const suffix = process.platform === "win32" ? ".exe" : "";
   return [
     process.env.NICE_CODE_ENGINE,
-    join(root, "engine", "target", "release", `nice-code-engine${suffix}`),
-    join(root, "engine", "target", "debug", `nice-code-engine${suffix}`),
+    join(PACKAGE_ROOT, "engine", "target", "release", `nice-code-engine${suffix}`),
+    join(PACKAGE_ROOT, "engine", "target", "debug", `nice-code-engine${suffix}`),
   ].filter(Boolean);
 }
 
 async function downloadEngine() {
+  const version = await packageVersion();
   const { target, suffix } = platformTarget();
   const cacheRoot =
     process.env.XDG_CACHE_HOME ??
     process.env.LOCALAPPDATA ??
     join(process.env.HOME ?? process.env.USERPROFILE ?? ".", ".cache");
-  const cacheDir = join(cacheRoot, "nice-code", VERSION, target);
+  const cacheDir = join(cacheRoot, "nice-code", version, target);
   const binary = join(cacheDir, `nice-code-engine${suffix}`);
   if (await exists(binary)) return binary;
   await mkdir(cacheDir, { recursive: true });
   const base =
     process.env.NICE_CODE_RELEASE_BASE_URL ??
-    `https://github.com/${REPOSITORY}/releases/download/v${VERSION}`;
+    `https://github.com/${REPOSITORY}/releases/download/v${version}`;
   const assetName = `nice-code-engine-${target}${suffix}`;
   const checksums = await fetch(`${base}/checksums.txt`);
   if (!checksums.ok)
