@@ -31,14 +31,6 @@ const SENSITIVE_WORDS: &[&str] = &[
     "api_key",
     "api-key",
 ];
-const SECRET_WORDS: &[&str] = &[
-    "password",
-    "secret",
-    "token",
-    "api_key",
-    "api-key",
-    "access_token",
-];
 const SENSITIVE_LOGGING: &[&str] = &[
     "console.",
     "logger.",
@@ -644,25 +636,13 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
         {
             findings.push(finding("AP-LOG-002", "Unstructured production output", "logging", "warning", "REVIEW", path, index + 1, "Review whether this output is structured, contextual, and appropriate for production.", "https://microsoft.github.io/rust-guidelines/guidelines/universal/"));
         }
-        if SECRET_WORDS.iter().any(|needle| lower.contains(needle))
-            && (line.contains('=') || line.contains(':'))
-            && line.matches(['\'', '"']).count() >= 2
-            && !is_placeholder(lower)
-            && !context.is_test
-        {
+        if is_hardcoded_secret_assignment(line, lower) && !context.is_test {
             findings.push(finding("AP-SEC-001", "Possible hardcoded secret", "security", "critical", "FAIL", path, index + 1, "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", "https://docs.aws.amazon.com/wellarchitected/latest/framework/security.html"));
         }
     }
     if is_js(path) && !context.is_test && !context.is_tooling {
-        let awaits = content
-            .lines()
-            .filter(|line| {
-                line.contains("await ")
-                    && (line.contains("const ") || line.contains("let ") || line.contains("var "))
-            })
-            .count();
-        if awaits > 1 && !content.contains("Promise.all(") {
-            findings.push(finding("AP-ASYNC-001", "Likely sequential independent awaits", "async", "warning", "REVIEW", path, 1, "Multiple awaits may be independent; verify dependency order and consider bounded parallelism.", "https://vercel.com/blog/introducing-react-best-practices"));
+        if let Some(line) = nearby_sequential_await_line(content) {
+            findings.push(finding("AP-ASYNC-001", "Likely sequential independent awaits", "async", "warning", "REVIEW", path, line, "Multiple awaits may be independent; verify dependency order and consider bounded parallelism.", "https://vercel.com/blog/introducing-react-best-practices"));
         }
     }
     findings
@@ -740,6 +720,59 @@ fn is_placeholder(line: &str) -> bool {
     ]
     .iter()
     .any(|x| line.contains(x))
+}
+
+fn is_hardcoded_secret_assignment(line: &str, lower: &str) -> bool {
+    let Some((left, right)) = line.split_once('=').or_else(|| line.split_once(':')) else {
+        return false;
+    };
+    let left = left.trim().trim_start_matches(['{', '[', ',']);
+    let normalized_left = left.to_ascii_lowercase().replace(['_', '-'], "");
+    let credential_key = ["password", "secret", "token", "apikey", "accesstoken"]
+        .iter()
+        .any(|needle| {
+            normalized_left
+                .split(|character: char| !character.is_ascii_alphanumeric())
+                .any(|part| part == *needle)
+        });
+    if !credential_key {
+        return false;
+    }
+    let value = right.trim();
+    if !is_non_empty_literal(value) || is_placeholder(lower) {
+        return false;
+    }
+    true
+}
+
+fn nearby_sequential_await_line(content: &str) -> Option<usize> {
+    if content.contains("Promise.all(") {
+        return None;
+    }
+    let candidates = content
+        .lines()
+        .enumerate()
+        .filter(|(_, line)| {
+            line.contains("await ")
+                && (line.contains("const ") || line.contains("let ") || line.contains("var "))
+        })
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    candidates
+        .windows(2)
+        .find_map(|window| (window[1] - window[0] <= 8).then_some(window[0] + 1))
+}
+
+fn is_non_empty_literal(value: &str) -> bool {
+    let value = value.trim_end_matches([';', ',']).trim();
+    let Some(delimiter) = value.chars().next() else {
+        return false;
+    };
+    if !matches!(delimiter, '\'' | '"' | '`') || !value.ends_with(delimiter) {
+        return false;
+    }
+    let content = &value[delimiter.len_utf8()..value.len() - delimiter.len_utf8()];
+    !content.trim().is_empty() && !content.contains("${")
 }
 fn summary(files: usize, findings: &[Finding]) -> Summary {
     Summary {
@@ -984,6 +1017,15 @@ mod tests {
         assert!(relative_source(Path::new("/tmp"), Path::new("/tmp/a.rs")).is_some());
         assert!(relative_source(Path::new("/tmp"), Path::new("/tmp/a.md")).is_none());
     }
+
+    #[test]
+    fn skips_dependency_directories_and_package_manifests() {
+        let project = Path::new("/tmp/project");
+        assert!(relative_source(project, &project.join("node_modules/pkg/index.ts")).is_none());
+        assert!(relative_source(project, &project.join("package.json")).is_none());
+        assert!(relative_source(project, &project.join("pnpm-lock.yaml")).is_none());
+        assert!(relative_source(project, &project.join("packages/ui/src/index.ts")).is_some());
+    }
     #[test]
     fn detects_rust_secret_log() {
         let mut parser = SyntaxParser::new();
@@ -994,6 +1036,22 @@ mod tests {
         );
         assert!(findings.iter().any(|f| f.id == "AP-LOG-001"));
     }
+
+    #[test]
+    fn security_rule_requires_a_literal_credential_assignment() {
+        let mut parser = SyntaxParser::new();
+        let findings = analyze_with_parser(
+            "src/auth.ts",
+            "const token = process.env.AUTH_TOKEN;\nconst password = \"real-value-123\";\nconst field = \"password\";\nconst generatedToken = randomBytes(16);\nconst dynamicToken = lastCreatedKey ?? \"\";\nconst apiKey = \"${key}\";",
+            &mut parser,
+        );
+        let security = findings
+            .iter()
+            .filter(|finding| finding.id == "AP-SEC-001")
+            .collect::<Vec<_>>();
+        assert_eq!(security.len(), 1);
+        assert_eq!(security[0].line, 2);
+    }
     #[test]
     fn detects_js_async_review() {
         let mut parser = SyntaxParser::new();
@@ -1003,6 +1061,17 @@ mod tests {
             &mut parser,
         );
         assert!(findings.iter().any(|f| f.id == "AP-ASYNC-001"));
+    }
+
+    #[test]
+    fn does_not_join_unrelated_async_functions() {
+        let mut parser = SyntaxParser::new();
+        let findings = analyze_with_parser(
+            "src/a.ts",
+            "async function one() {\n  const a = await oneThing();\n}\n\n\n\n\n\n\nasync function two() {\n  const b = await twoThing();\n}",
+            &mut parser,
+        );
+        assert!(!findings.iter().any(|f| f.id == "AP-ASYNC-001"));
     }
 
     #[test]

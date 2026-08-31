@@ -4,6 +4,7 @@ use tree_sitter::{Language, Parser};
 pub enum LanguageKind {
     JavaScript,
     TypeScript,
+    Tsx,
     Rust,
     Go,
     Dart,
@@ -13,7 +14,8 @@ pub fn language_for_path(path: &str) -> Option<LanguageKind> {
     let extension = path.rsplit_once('.')?.1;
     Some(match extension {
         "js" | "jsx" | "mjs" | "cjs" => LanguageKind::JavaScript,
-        "ts" | "tsx" => LanguageKind::TypeScript,
+        "ts" => LanguageKind::TypeScript,
+        "tsx" => LanguageKind::Tsx,
         "rs" => LanguageKind::Rust,
         "go" => LanguageKind::Go,
         "dart" => LanguageKind::Dart,
@@ -44,6 +46,7 @@ impl SyntaxParser {
         let language = match kind {
             LanguageKind::JavaScript => tree_sitter_javascript::LANGUAGE.into(),
             LanguageKind::TypeScript => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
+            LanguageKind::Tsx => tree_sitter_typescript::LANGUAGE_TSX.into(),
             LanguageKind::Rust => tree_sitter_rust::LANGUAGE.into(),
             LanguageKind::Go => tree_sitter_go::LANGUAGE.into(),
             LanguageKind::Dart => tree_sitter_dart::LANGUAGE.into(),
@@ -75,6 +78,11 @@ mod tests {
     fn maps_supported_languages() {
         assert_eq!(language_for_path("src/lib.rs"), Some(LanguageKind::Rust));
         assert_eq!(language_for_path("src/main.dart"), Some(LanguageKind::Dart));
+        assert_eq!(
+            language_for_path("src/App.ts"),
+            Some(LanguageKind::TypeScript)
+        );
+        assert_eq!(language_for_path("src/App.tsx"), Some(LanguageKind::Tsx));
         assert_eq!(language_for_path("README.md"), None);
     }
 
@@ -89,6 +97,10 @@ mod tests {
         let mut parser = SyntaxParser::new();
         assert!(!parser.parse_has_errors("src/lib.rs", "fn main() {}"));
         assert!(!parser.parse_has_errors("src/main.ts", "const value: number = 1;"));
+        assert!(!parser.parse_has_errors(
+            "src/App.tsx",
+            "export function App() { return <main>Hello</main>; }"
+        ));
         assert!(!parser.parse_has_errors("main.go", "package main\nfunc main() {}"));
     }
 }
