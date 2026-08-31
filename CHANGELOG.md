@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/sayanmohsin/nice-code/compare/v0.1.8...v0.1.9) (2026-08-31)
+
+
+### Bug Fixes
+
+* reduce analysis false positives ([1f76efc](https://github.com/sayanmohsin/nice-code/commit/1f76efc30af4f3a12e7f4cfafd4a4f2bdfcf3207))
+
 ## [0.1.8](https://github.com/sayanmohsin/nice-code/compare/v0.1.7...v0.1.8) (2026-08-30)
 
 
