@@ -1,6 +1,6 @@
 {
   "name": "@sayanmohsin/nice-code",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Source-backed engineering guardrails for reliable software development",
   "repository": {
     "type": "git",

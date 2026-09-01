@@ -575,7 +575,6 @@ struct FileContext<'a> {
     content: &'a str,
     lowercase: String,
     is_test: bool,
-    is_tooling: bool,
     has_parse_errors: bool,
 }
 
@@ -585,7 +584,6 @@ fn analyze_with_parser(path: &str, content: &str, parser: &mut SyntaxParser) -> 
         content,
         lowercase: content.to_ascii_lowercase(),
         is_test: is_test_file(path, content),
-        is_tooling: is_tooling(path),
         has_parse_errors: parser.parse_has_errors(path, content),
     };
     analyze_context(&context)
@@ -595,7 +593,7 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
     let path = context.path;
     let content = context.content;
     let mut findings = Vec::new();
-    if context.has_parse_errors {
+    if context.has_parse_errors && has_confident_syntax_error(path, content) {
         findings.push(finding(
             "AP-SYNTAX-001",
             "Syntax errors detected",
@@ -613,6 +611,7 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
             .iter()
             .any(|needle| lower.contains(needle))
             && SENSITIVE_WORDS.iter().any(|needle| lower.contains(needle))
+            && contains_secret_value_expression(line, lower)
             && !context.is_test
         {
             findings.push(finding(
@@ -631,8 +630,7 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
             .iter()
             .any(|needle| lower.contains(needle))
             && !SENSITIVE_WORDS.iter().any(|needle| lower.contains(needle))
-            && !context.is_test
-            && !context.is_tooling
+            && !is_non_production_review_context(path)
         {
             findings.push(finding("AP-LOG-002", "Unstructured production output", "logging", "warning", "REVIEW", path, index + 1, "Review whether this output is structured, contextual, and appropriate for production.", "https://microsoft.github.io/rust-guidelines/guidelines/universal/"));
         }
@@ -640,7 +638,7 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
             findings.push(finding("AP-SEC-001", "Possible hardcoded secret", "security", "critical", "FAIL", path, index + 1, "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", "https://docs.aws.amazon.com/wellarchitected/latest/framework/security.html"));
         }
     }
-    if is_js(path) && !context.is_test && !context.is_tooling {
+    if is_js(path) && !is_non_production_review_context(path) {
         if let Some(line) = nearby_sequential_await_line(content) {
             findings.push(finding("AP-ASYNC-001", "Likely sequential independent awaits", "async", "warning", "REVIEW", path, line, "Multiple awaits may be independent; verify dependency order and consider bounded parallelism.", "https://vercel.com/blog/introducing-react-best-practices"));
         }
@@ -706,6 +704,47 @@ fn is_tooling(path: &str) -> bool {
     path.split('/')
         .any(|part| ["script", "scripts", "tools", "bin", "cli"].contains(&part))
 }
+
+fn is_non_production_review_context(path: &str) -> bool {
+    let lower = path.to_ascii_lowercase();
+    is_test_file(path, "")
+        || is_tooling(path)
+        || lower.split('/').any(|part| {
+            matches!(part, "bench" | "benchmarks" | "example" | "examples")
+                || part.ends_with("-cli")
+                || part.ends_with("-examples")
+        })
+}
+
+fn has_confident_syntax_error(path: &str, content: &str) -> bool {
+    let Some(kind) = nice_code_engine::language_for_path(path) else {
+        return false;
+    };
+    if content.trim().is_empty() {
+        return false;
+    }
+
+    matches!(
+        kind,
+        nice_code_engine::LanguageKind::JavaScript
+            | nice_code_engine::LanguageKind::TypeScript
+            | nice_code_engine::LanguageKind::Tsx
+    ) && content.lines().any(|line| {
+        let trimmed = line.trim();
+        trimmed.ends_with('{') || trimmed.ends_with("=;") || trimmed.ends_with("= ;")
+    })
+}
+
+fn contains_secret_value_expression(line: &str, lowercase: &str) -> bool {
+    line.contains("${")
+        || line.contains(',')
+        || line.contains('+')
+        || SENSITIVE_WORDS
+            .iter()
+            .filter(|word| lowercase.contains(**word))
+            .count()
+            > 1
+}
 fn is_placeholder(line: &str) -> bool {
     [
         "example",
@@ -752,15 +791,40 @@ fn nearby_sequential_await_line(content: &str) -> Option<usize> {
     let candidates = content
         .lines()
         .enumerate()
-        .filter(|(_, line)| {
-            line.contains("await ")
-                && (line.contains("const ") || line.contains("let ") || line.contains("var "))
+        .filter_map(|(index, line)| {
+            let (declaration, expression) = line.split_once("await ")?;
+            let variable = declaration.split_whitespace().nth(1).map(|name| {
+                name.trim_matches(|character: char| {
+                    !character.is_ascii_alphanumeric() && character != '_'
+                })
+            })?;
+            Some((
+                index,
+                variable.to_ascii_lowercase(),
+                expression.trim().to_string(),
+            ))
         })
-        .map(|(index, _)| index)
         .collect::<Vec<_>>();
-    candidates
-        .windows(2)
-        .find_map(|window| (window[1] - window[0] <= 8).then_some(window[0] + 1))
+    candidates.windows(2).find_map(|window| {
+        let first = &window[0];
+        let second = &window[1];
+        if second.0 - first.0 > 8 || await_is_dependent(first, second) {
+            return None;
+        }
+        Some(second.0 + 1)
+    })
+}
+
+fn await_is_dependent(first: &(usize, String, String), second: &(usize, String, String)) -> bool {
+    let second_source = second.2.to_ascii_lowercase();
+    let references_first = second_source
+        .split(|character: char| !character.is_ascii_alphanumeric() && character != '_')
+        .any(|token| token == first.1);
+    references_first
+        || (first.2.contains("fetch(")
+            && [".json(", ".text(", ".arraybuffer("]
+                .iter()
+                .any(|method| second_source.contains(method)))
 }
 
 fn is_non_empty_literal(value: &str) -> bool {
@@ -771,7 +835,11 @@ fn is_non_empty_literal(value: &str) -> bool {
     if !matches!(delimiter, '\'' | '"' | '`') || !value.ends_with(delimiter) {
         return false;
     }
-    let content = &value[delimiter.len_utf8()..value.len() - delimiter.len_utf8()];
+    let delimiter_width = delimiter.len_utf8();
+    if value.len() < delimiter_width * 2 {
+        return false;
+    }
+    let content = &value[delimiter_width..value.len() - delimiter_width];
     !content.trim().is_empty() && !content.contains("${")
 }
 fn summary(files: usize, findings: &[Finding]) -> Summary {
@@ -1061,6 +1129,42 @@ mod tests {
             &mut parser,
         );
         assert!(findings.iter().any(|f| f.id == "AP-ASYNC-001"));
+    }
+
+    #[test]
+    fn ignores_dependent_async_steps() {
+        let mut parser = SyntaxParser::new();
+        let findings = analyze_with_parser(
+            "src/client.ts",
+            "const response = await fetch(url);\nconst payload = await response.json();",
+            &mut parser,
+        );
+        assert!(!findings.iter().any(|f| f.id == "AP-ASYNC-001"));
+    }
+
+    #[test]
+    fn does_not_report_parser_limitations_as_syntax_errors() {
+        let mut parser = SyntaxParser::new();
+        let findings = analyze_with_parser(
+            "src/current.rs",
+            "fn main() {\n    let value: Option<u64> = None;\n    println!(\"{value:?}\");\n}",
+            &mut parser,
+        );
+        assert!(!findings.iter().any(|f| f.id == "AP-SYNTAX-001"));
+    }
+
+    #[test]
+    fn rejects_unbalanced_source_delimiters() {
+        let mut parser = SyntaxParser::new();
+        let findings = analyze_with_parser("src/bad.ts", "function broken() {", &mut parser);
+        assert!(findings.iter().any(|f| f.id == "AP-SYNTAX-001"));
+    }
+
+    #[test]
+    fn treats_examples_and_benchmarks_as_non_production_review_contexts() {
+        assert!(is_non_production_review_context("examples/basic/index.ts"));
+        assert!(is_non_production_review_context("bench/node-bench.mjs"));
+        assert!(!is_non_production_review_context("src/server.ts"));
     }
 
     #[test]
