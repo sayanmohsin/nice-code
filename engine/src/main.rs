@@ -729,10 +729,10 @@ fn has_confident_syntax_error(path: &str, content: &str) -> bool {
         nice_code_engine::LanguageKind::JavaScript
             | nice_code_engine::LanguageKind::TypeScript
             | nice_code_engine::LanguageKind::Tsx
-    ) && content.lines().any(|line| {
-        let trimmed = line.trim();
+    ) && {
+        let trimmed = content.trim_end();
         trimmed.ends_with('{') || trimmed.ends_with("=;") || trimmed.ends_with("= ;")
-    })
+    }
 }
 
 fn contains_secret_value_expression(line: &str, lowercase: &str) -> bool {
