@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11](https://github.com/sayanmohsin/nice-code/compare/v0.1.10...v0.1.11) (2026-09-01)
+
+
+### Bug Fixes
+
+* reduce source review false positives ([6f26c23](https://github.com/sayanmohsin/nice-code/commit/6f26c2393caef6ae4053d2aae3cff7eb4dfb92d6))
+
 ## [0.1.10](https://github.com/sayanmohsin/nice-code/compare/v0.1.9...v0.1.10) (2026-09-01)
 
 
