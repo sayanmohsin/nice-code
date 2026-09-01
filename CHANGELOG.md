@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.10](https://github.com/sayanmohsin/nice-code/compare/v0.1.9...v0.1.10) (2026-09-01)
+
+
+### Bug Fixes
+
+* harden Nice Code source heuristics ([ac697b4](https://github.com/sayanmohsin/nice-code/commit/ac697b4cbd020362472ce8bebb274e156a5645f9))
+
 ## [0.1.9](https://github.com/sayanmohsin/nice-code/compare/v0.1.8...v0.1.9) (2026-08-31)
 
 
