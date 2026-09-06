@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/sayanmohsin/nice-code/compare/v0.1.12...v0.2.0) (2026-09-06)
+
+
+### Features
+
+* add managed project skills and advisor ([a2f08c7](https://github.com/sayanmohsin/nice-code/commit/a2f08c7383b158276fa9233ae919f4457dec4383))
+
 ## [0.1.12](https://github.com/sayanmohsin/nice-code/compare/v0.1.11...v0.1.12) (2026-09-06)
 
 
