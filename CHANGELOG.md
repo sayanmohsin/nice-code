@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.12](https://github.com/sayanmohsin/nice-code/compare/v0.1.11...v0.1.12) (2026-09-06)
+
+
+### Bug Fixes
+
+* apply project review configuration ([9cc1a1d](https://github.com/sayanmohsin/nice-code/commit/9cc1a1d34848ef88ade3ddb843ba246b4434c339))
+
 ## [0.1.11](https://github.com/sayanmohsin/nice-code/compare/v0.1.10...v0.1.11) (2026-09-01)
 
 
