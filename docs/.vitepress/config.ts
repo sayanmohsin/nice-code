@@ -48,6 +48,7 @@ export default defineConfig({
           items: [
             { text: "CLI", link: "/cli" },
             { text: "Project integration", link: "/project-integration" },
+            { text: "Skills", link: "/skills" },
             { text: "Agent integration", link: "/agent-integration" },
             { text: "Configuration", link: "/configuration" },
             { text: "Baselines", link: "/baselines" },

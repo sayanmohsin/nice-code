@@ -46,6 +46,15 @@ nice-code --changed --project .
 nice-code --all --project .
 nice-code --changed --format agent --project .
 nice-code --changed --ci --format sarif --project . > nice-code.sarif
+
+# Set up a new project with detected guidance
+nice-code advise --project .
+nice-code init --project .
+nice-code init --project . --apply
+
+# Inspect managed agent skills
+nice-code skills list
+nice-code skills outdated --project .
 ```
 
 Start with changed files. Treat full-scan findings as a review queue until the project has classified its baseline. Add `.nice-code.json` when the project needs profiles, ignored paths, severity overrides, or narrow exceptions.

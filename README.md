@@ -34,6 +34,10 @@ not required on the user's machine:
 npm install --global @sayanmohsin/nice-code
 nice-code --help
 nice-code --changed --project .
+
+# Discover project setup and available agent skills
+nice-code advise --project .
+nice-code skills list
 ```
 
 For a one-off run without a global install:
@@ -215,6 +219,20 @@ overrides, and precise `exceptions` with a required reason. See
 [`examples/project-config.json`](examples/project-config.json). Exceptions are intentionally
 specific; they do not disable a whole category.
 
+For a new repository, use the project advisor before choosing rules manually:
+
+```bash
+nice-code advise --project .
+nice-code init --project .
+nice-code init --project . --apply
+```
+
+The initializer detects languages and frameworks, previews missing
+`.nice-code.json`, `DESIGN.md`, `AGENTS.md`, and a pinned
+`.nice-code/skills.lock.json`, and never overwrites existing guidance. Review
+managed skills with `nice-code skills list`, `nice-code skills outdated`, and
+`nice-code skills update --apply`.
+
 For GitHub code scanning or other SARIF consumers:
 
 ```bash
@@ -316,6 +334,10 @@ commands, boundaries, and exceptions.
 The CLI and skill are separate on purpose: the CLI produces repeatable evidence, while the skill
 helps an agent reason about context before and during a change. A project can use either one or
 both.
+
+Nice Code also ships a curated, versioned skill registry for agent guidance.
+Generic web-interface and design-system guidance is managed in Nice Code;
+product-specific visual identity belongs in each project's `DESIGN.md`.
 
 ## Patterns
 

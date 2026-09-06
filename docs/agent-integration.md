@@ -18,3 +18,8 @@ nice-code --changed --format agent --include-review --max-findings 20 --project 
 The skill gives review guidance; it does not claim to prove architecture or correctness from text alone.
 The CLI is still the execution interface. JSON and agent output are the
 supported machine-facing formats; there is no MCP server or editor plugin yet.
+
+For a new repository, agents can begin with `nice-code advise --project .`.
+The advisor reports detected ecosystems, recommended skills, and missing
+project guidance. `nice-code init --project .` previews setup files, while
+`--apply` is required to create them. Existing design guidance is preserved.

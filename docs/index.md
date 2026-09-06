@@ -29,6 +29,9 @@ features:
   - icon: ⌘
     title: Works with your tools
     details: Complement TypeScript, Rust, Go, Dart, framework tooling, and CI.
+  - icon: ✦
+    title: Starts projects well
+    details: Discover the right profiles and manage versioned agent skills without guessing.
 ---
 
 <div class="nice-code-flow" aria-label="Nice Code workflow">
@@ -52,7 +55,8 @@ It complements compilers, formatters, linters, tests, and tools such as SonarQub
 | If you are…                      | Start here                                  |
 | -------------------------------- | ------------------------------------------- |
 | Trying Nice Code in a repository | [Getting started](/getting-started)         |
-| Adding it to a project           | [Project integration](/project-integration) |
+| Starting or adding a project     | [Project integration](/project-integration) |
+| Managing agent skills            | [Skills](/skills)                           |
 | Wiring it to an agent            | [Agent integration](/agent-integration)     |
 | Adding it to CI                  | [CI](/ci)                                   |
 | Reviewing scan output            | [Findings and statuses](/findings)          |
