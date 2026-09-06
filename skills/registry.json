@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "skills": [
+    {
+      "id": "web-interface",
+      "name": "Web Interface Quality",
+      "description": "Accessible, responsive, resilient web-interface guidance for agents and reviewers.",
+      "category": "web",
+      "ecosystems": ["typescript", "react", "astro", "svelte", "vite"],
+      "version": "0.1.0",
+      "source": "https://vercel.com/design/guidelines",
+      "revision": "living-guidelines",
+      "license": "Reference guidance; see source",
+      "mode": "adapted",
+      "path": "web-interface/SKILL.md"
+    },
+    {
+      "id": "design-system",
+      "name": "Design System Foundations",
+      "description": "Project-local design direction, component consistency, and visual review guidance.",
+      "category": "design",
+      "ecosystems": ["typescript", "react", "astro", "svelte", "vite"],
+      "version": "0.1.0",
+      "source": "https://github.com/VoltAgent/awesome-design-md",
+      "revision": "catalog",
+      "license": "Reference catalog; see source",
+      "mode": "adapted",
+      "path": "design-system/SKILL.md"
+    }
+  ]
+}

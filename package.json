@@ -24,6 +24,9 @@
   },
   "files": [
     "scripts/nice-code.mjs",
+    "scripts/skills.mjs",
+    "scripts/project.mjs",
+    "skills/",
     "SKILL.md",
     "README.md",
     "LICENSE"
@@ -38,6 +41,8 @@
     "check": "node scripts/nice-code.mjs --all --project .",
     "metrics": "bun scripts/metrics.mts",
     "init": "bun scripts/init.mts",
+    "skills": "node scripts/skills.mjs",
+    "skills:check": "node scripts/skills.mjs check",
     "test": "cargo test --manifest-path engine/Cargo.toml",
     "test:bun": "bun scripts/test-engine.ts",
     "check:docs": "bun scripts/check-docs.mts",

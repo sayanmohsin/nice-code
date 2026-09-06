@@ -38,6 +38,20 @@ nice-code --changed --ci --format sarif --project . > nice-code.sarif
 nice-code --explain AP-LOG-001
 nice-code --all --format json --write-baseline .nice-code-baseline.json
 nice-code --changed --new-only --baseline .nice-code-baseline.json --format agent
+
+# Inspect the curated agent-skill registry
+nice-code skills list
+nice-code skills show web-interface
+nice-code skills check
+nice-code skills outdated --project .
+nice-code skills update --project .
+nice-code skills update --project . --apply
+
+# Discover or preview project guidance
+nice-code advise --project .
+nice-code advise --project . --format json
+nice-code init --project .
+nice-code init --project . --apply
 ```
 
 For the complete option list and examples, run `nice-code --help`. Use

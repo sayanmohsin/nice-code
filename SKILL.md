@@ -12,6 +12,9 @@ not only formatting or compiler feedback.
 
 ## Routing
 
+For project setup and available agent guidance, inspect the curated registry
+with `nice-code skills list` and follow the project's `DESIGN.md` when present.
+
 Read only the relevant pattern before making a recommendation:
 
 - Logging or telemetry: `patterns/logging-and-observability.md`

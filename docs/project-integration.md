@@ -8,6 +8,8 @@ Recommended project files are:
 ```text
 .nice-code.json
 AGENTS.md             # optional short routing note
+DESIGN.md             # optional product-specific visual language
+.nice-code/skills.lock.json # optional pinned project skills
 package.json          # optional nice-code script
 ```
 
@@ -21,3 +23,6 @@ package.json          # optional nice-code script
 ```
 
 Keep project-specific exceptions close to the project and make them as narrow as possible.
+Keep product-specific design decisions in `DESIGN.md`. Nice Code's bundled
+skills provide reusable agent guidance; they do not replace a project's own
+visual identity.

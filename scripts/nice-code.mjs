@@ -103,6 +103,24 @@ async function downloadEngine() {
 }
 
 async function main() {
+  if (process.argv[2] === "advise" || process.argv[2] === "init") {
+    const result = spawnSync(
+      process.execPath,
+      [join(PACKAGE_ROOT, "scripts", "project.mjs"), ...process.argv.slice(2)],
+      { stdio: "inherit" },
+    );
+    process.exitCode = result.status ?? 2;
+    return;
+  }
+  if (process.argv[2] === "skills") {
+    const result = spawnSync(
+      process.execPath,
+      [join(PACKAGE_ROOT, "scripts", "skills.mjs"), ...process.argv.slice(3)],
+      { stdio: "inherit" },
+    );
+    process.exitCode = result.status ?? 2;
+    return;
+  }
   const candidates = localCandidates();
   let engine;
   for (const candidate of candidates)
