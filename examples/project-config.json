@@ -6,8 +6,8 @@
   },
   "exceptions": [
     {
-      "id": "AP-LOG-002",
-      "file": "scripts/seed.mjs",
+      "patternId": "AP-LOG-002",
+      "path": "scripts/seed.mjs",
       "reason": "Short-lived local seed command; no production logging path."
     }
   ]

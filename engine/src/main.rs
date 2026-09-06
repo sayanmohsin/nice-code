@@ -1,7 +1,7 @@
 use clap::{Parser, ValueEnum};
 use nice_code_engine::SyntaxParser;
 use rayon::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::io::IsTerminal;
 use std::{
     collections::{HashMap, HashSet},
@@ -161,6 +161,27 @@ struct Finding {
     source: String,
 }
 
+#[derive(Clone, Debug, Default, Deserialize)]
+struct ProjectConfig {
+    #[serde(default)]
+    profiles: Vec<String>,
+    #[serde(default)]
+    ignore: Vec<String>,
+    #[serde(default)]
+    severity: HashMap<String, String>,
+    #[serde(default)]
+    exceptions: Vec<ExceptionRule>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct ExceptionRule {
+    #[serde(rename = "patternId", alias = "id")]
+    pattern_id: String,
+    #[serde(rename = "path", alias = "file")]
+    path: String,
+    reason: String,
+}
+
 #[derive(Debug, Serialize)]
 struct Summary {
     files: usize,
@@ -246,7 +267,8 @@ fn main() {
     let project = fs::canonicalize(&args.project).unwrap_or(args.project.clone());
     let mode = if args.all { "all" } else { "changed" };
     let discovery_started = Instant::now();
-    let files = discover(&project, mode);
+    let config = load_config(&project);
+    let files = discover(&project, mode, &config);
     let discovery_ms = discovery_started.elapsed().as_secs_f64() * 1000.0;
     let analysis_started = Instant::now();
     let caching = args.cache && !args.no_cache;
@@ -297,6 +319,7 @@ fn main() {
             .then(a.line.cmp(&b.line))
             .then(a.id.cmp(&b.id))
     });
+    let findings = apply_config(findings, &config);
     if let Some(path) = &args.write_baseline {
         save_baseline(path, &findings);
     }
@@ -354,7 +377,11 @@ fn main() {
         } else {
             None
         },
-        active_profiles: vec!["default".to_string()],
+        active_profiles: if config.profiles.is_empty() {
+            vec!["default".to_string()]
+        } else {
+            config.profiles.clone()
+        },
         detected: detect(&project),
         files_scanned: files.iter().map(|(p, _)| p.clone()).collect(),
         custom_findings: displayed_findings.clone(),
@@ -385,7 +412,16 @@ fn main() {
     }
 }
 
-fn discover(project: &Path, mode: &str) -> Vec<(String, String)> {
+fn load_config(project: &Path) -> ProjectConfig {
+    project
+        .join(".nice-code.json")
+        .to_str()
+        .and_then(|path| fs::read_to_string(path).ok())
+        .and_then(|contents| serde_json::from_str(&contents).ok())
+        .unwrap_or_default()
+}
+
+fn discover(project: &Path, mode: &str, config: &ProjectConfig) -> Vec<(String, String)> {
     let paths = if mode == "changed" {
         changed_files(project)
     } else {
@@ -405,6 +441,12 @@ fn discover(project: &Path, mode: &str) -> Vec<(String, String)> {
     };
     let mut output = paths
         .par_iter()
+        .filter(|path| {
+            !config
+                .ignore
+                .iter()
+                .any(|pattern| path_matches(pattern, path))
+        })
         .filter_map(|path| {
             fs::read_to_string(project.join(path))
                 .ok()
@@ -413,6 +455,68 @@ fn discover(project: &Path, mode: &str) -> Vec<(String, String)> {
         .collect::<Vec<_>>();
     output.sort_by(|a, b| a.0.cmp(&b.0));
     output
+}
+
+fn apply_config(mut findings: Vec<Finding>, config: &ProjectConfig) -> Vec<Finding> {
+    findings.retain(|finding| {
+        !config.exceptions.iter().any(|exception| {
+            !exception.reason.trim().is_empty()
+                && exception.pattern_id == finding.id
+                && path_matches(&exception.path, &finding.file)
+        })
+    });
+    for finding in &mut findings {
+        let Some(severity) = config.severity.get(&finding.id) else {
+            continue;
+        };
+        match severity.to_ascii_lowercase().as_str() {
+            "critical" | "error" => finding.severity = "critical".into(),
+            "warning" | "warn" => finding.severity = "warning".into(),
+            "review" => {
+                finding.severity = "warning".into();
+                finding.status = "REVIEW".into();
+            }
+            "pass" => finding.status = "PASS".into(),
+            _ => {}
+        }
+    }
+    findings
+}
+
+fn path_matches(pattern: &str, path: &str) -> bool {
+    let pattern = pattern.trim_matches('/');
+    let path = path.trim_matches('/');
+    let pattern = pattern.split('/').collect::<Vec<_>>();
+    let path = path.split('/').collect::<Vec<_>>();
+    glob_matches(&pattern, &path)
+}
+
+fn glob_matches(pattern: &[&str], path: &[&str]) -> bool {
+    if pattern.is_empty() {
+        return path.is_empty();
+    }
+    if pattern[0] == "**" {
+        return glob_matches(&pattern[1..], path)
+            || (!path.is_empty() && glob_matches(pattern, &path[1..]));
+    }
+    !path.is_empty()
+        && segment_matches(pattern[0], path[0])
+        && glob_matches(&pattern[1..], &path[1..])
+}
+
+fn segment_matches(pattern: &str, value: &str) -> bool {
+    segment_bytes_match(pattern.as_bytes(), value.as_bytes())
+}
+
+fn segment_bytes_match(pattern: &[u8], value: &[u8]) -> bool {
+    if pattern.is_empty() {
+        return value.is_empty();
+    }
+    if pattern[0] == b'*' {
+        return segment_bytes_match(&pattern[1..], value)
+            || (!value.is_empty() && segment_bytes_match(pattern, &value[1..]));
+    }
+    !value.is_empty() && pattern[0] == value[0] && segment_bytes_match(&pattern[1..], &value[1..])
 }
 
 fn cache_path(project: &Path) -> Option<PathBuf> {
@@ -1165,6 +1269,60 @@ mod tests {
         assert!(is_non_production_review_context("examples/basic/index.ts"));
         assert!(is_non_production_review_context("bench/node-bench.mjs"));
         assert!(!is_non_production_review_context("src/server.ts"));
+    }
+
+    #[test]
+    fn applies_project_ignores_and_precise_exceptions() {
+        assert!(path_matches("backend/benches/**", "backend/benches/run.rs"));
+        assert!(path_matches("**/generated/**", "src/generated/model.ts"));
+        assert!(!path_matches("src/generated/**", "src/runtime/model.ts"));
+
+        let findings = vec![finding(
+            "AP-LOG-002",
+            "Unstructured production output",
+            "logging",
+            "warning",
+            "REVIEW",
+            "src/bootstrap.rs",
+            4,
+            "Review this output.",
+            "https://example.com",
+        )];
+        let config = ProjectConfig {
+            profiles: vec!["default".into()],
+            ignore: vec!["vendor/**".into()],
+            severity: HashMap::new(),
+            exceptions: vec![ExceptionRule {
+                pattern_id: "AP-LOG-002".into(),
+                path: "src/bootstrap.rs".into(),
+                reason: "Runs before structured logging is initialized.".into(),
+            }],
+        };
+        assert!(apply_config(findings, &config).is_empty());
+    }
+
+    #[test]
+    fn applies_severity_overrides_without_disabling_other_checks() {
+        let findings = vec![finding(
+            "AP-LOG-001",
+            "Secret-bearing log expression",
+            "logging",
+            "critical",
+            "FAIL",
+            "src/server.rs",
+            9,
+            "Review this output.",
+            "https://example.com",
+        )];
+        let mut severity = HashMap::new();
+        severity.insert("AP-LOG-001".into(), "review".into());
+        let config = ProjectConfig {
+            severity,
+            ..ProjectConfig::default()
+        };
+        let finding = &apply_config(findings, &config)[0];
+        assert_eq!(finding.severity, "warning");
+        assert_eq!(finding.status, "REVIEW");
     }
 
     #[test]
