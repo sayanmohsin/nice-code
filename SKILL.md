@@ -30,6 +30,8 @@ Read only the relevant pattern before making a recommendation:
 - Availability, deployment, or recovery: `patterns/reliability-and-operations.md`
 - React or UI behavior: `patterns/react-and-ui.md`
 - AI-generated change review: `patterns/code-review-and-ai.md`
+- Java or Spring Boot: `patterns/java-and-spring-boot.md`, `patterns/java-logging-and-coding-standards.md`, and the managed `java-spring-boot` skill
+- Public Java company practices: `patterns/java-company-practices.md`; use it as corroborating evidence, not a copied company blueprint
 
 ## Review discipline
 

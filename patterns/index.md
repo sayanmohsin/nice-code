@@ -13,6 +13,9 @@
 - [Reliability and operations](reliability-and-operations.md)
 - [React and UI behavior](react-and-ui.md)
 - [Code review and AI-generated changes](code-review-and-ai.md)
+- [Java and Spring Boot architecture](java-and-spring-boot.md)
+- [Java logging and coding standards](java-logging-and-coding-standards.md)
+- [Java practices from public engineering organizations](java-company-practices.md)
 
 Additional persistence, API-boundary, state-management, and reliability patterns will be added
 only after their source and enforcement path are documented.

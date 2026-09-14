@@ -7,13 +7,14 @@ on it. The audit is about evidence and useful engineering judgment, not a qualit
 
 1. Review every source URL in `sources/index.md` and record whether official guidance changed.
 2. Run `nice-code --all --project /path/to/project --format json` for representative
-   Rust, Go, TypeScript/React, Dart, and web projects.
+   Rust, Go, Java/Spring Boot, TypeScript/React, Dart, and web projects.
 3. Run `bun scripts/metrics.mts report.json` and compare status, category, file-class,
    critical, and review findings with the previous audit. Use a generated baseline
    with `--new-only` when the audit needs to distinguish accepted findings from
    findings that are currently visible.
 4. Sample findings and classify false positives, useful reviews, and missing checks.
-5. Compare results with Clippy, Biome, ESLint, Go vet, Dart Analyzer, compiler output, and CI.
+5. Compare results with Clippy, Biome, ESLint, Go vet, Dart Analyzer, Maven/Gradle, Java compiler,
+   Checkstyle/SpotBugs where configured, and CI.
 6. Review a sample of AI-generated and human-written changes for recurring failures.
 7. Add or revise a pattern only when a concrete recurring problem and approved public source exist.
 8. Deprecate or reject noisy, duplicative, or unsupported patterns.

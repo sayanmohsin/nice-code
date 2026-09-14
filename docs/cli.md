@@ -57,6 +57,9 @@ nice-code init --project . --apply
 For the complete option list and examples, run `nice-code --help`. Use
 `nice-code --version` to confirm the installed launcher version.
 
+Java and Spring Boot projects are detected automatically. Use `--ci` to include the project's Maven
+or Gradle tests, with `mvnw` and `gradlew` preferred when present.
+
 ## Output modes
 
 - `text` is the compact human terminal view.

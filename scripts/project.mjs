@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
@@ -24,6 +24,10 @@ function detect(projectRoot) {
   if (has("Cargo.toml")) ecosystems.push("rust");
   if (has("go.mod")) ecosystems.push("go");
   if (has("pubspec.yaml")) ecosystems.push("dart");
+  const java = has("pom.xml") || has("build.gradle") || has("build.gradle.kts") || hasJavaSource(projectRoot);
+  if (java) ecosystems.push("java");
+  const springBoot = isSpringBoot(projectRoot);
+  if (springBoot) ecosystems.push("spring-boot");
   if (has("tsconfig.json") || dependencies.typescript) ecosystems.push("typescript");
   if (dependencies.react || dependencies["react-dom"]) ecosystems.push("react");
   if (has("astro.config.ts") || has("astro.config.mjs") || dependencies.astro) ecosystems.push("astro");
@@ -32,8 +36,26 @@ function detect(projectRoot) {
   const web = ecosystems.some((entry) => ["typescript", "react", "astro", "svelte", "vite"].includes(entry));
   const files = [".nice-code.json", "DESIGN.md", "AGENTS.md", "SKILL.md", ".nice-code/skills.lock.json"];
   const existing = files.filter((file) => has(file));
-  const recommendedSkills = web ? registry.skills.filter((skill) => skill.ecosystems.some((entry) => ecosystems.includes(entry))) : [];
-  return { ecosystems, web, existing, recommendedSkills };
+  const recommendedSkills = registry.skills.filter((skill) => skill.ecosystems.some((entry) => ecosystems.includes(entry)));
+  return { ecosystems, web, java, springBoot, existing, recommendedSkills };
+}
+
+function hasJavaSource(projectRoot) {
+  return readdirRecursive(projectRoot).some((file) => file.endsWith(".java"));
+}
+
+function readdirRecursive(rootPath) {
+  const entries = readdirSync(rootPath, { withFileTypes: true });
+  return entries.flatMap((entry) => {
+    if ([".git", "node_modules", "target", "build", "dist"].includes(entry.name)) return [];
+    const path = join(rootPath, entry.name);
+    return entry.isDirectory() ? readdirRecursive(path) : [path];
+  });
+}
+
+function isSpringBoot(projectRoot) {
+  return ["pom.xml", "build.gradle", "build.gradle.kts"].some((name) => existsSync(join(projectRoot, name)) && readFileSync(join(projectRoot, name), "utf8").includes("spring-boot"))
+    || readdirRecursive(projectRoot).filter((file) => file.endsWith(".java")).some((file) => readFileSync(file, "utf8").includes("@SpringBootApplication"));
 }
 
 function report(projectRoot, detected) {
@@ -57,7 +79,7 @@ function print(reportData) {
 }
 
 function filesFor(projectRoot, detected) {
-  const profiles = ["default", ...detected.ecosystems.filter((entry) => ["typescript", "react", "astro", "svelte", "vite"].includes(entry))];
+  const profiles = ["default", ...detected.ecosystems.filter((entry) => ["typescript", "react", "astro", "svelte", "vite", "java", "spring-boot"].includes(entry))];
   const skills = detected.recommendedSkills.map(({ id, version, source, revision }) => ({ id, version, source, revision }));
   const design = `# Design direction\n\nDocument this project's visual language, typography, spacing, color, component primitives, responsive behavior, and intentional exceptions here.\n\nNice Code can review implementation patterns, but rendered browser feedback is still required for visual quality.\n`;
   const agents = `## Nice Code\n\nUse the project's DESIGN.md for product-specific UI decisions. Run \`nice-code advise --project .\` when adding a new surface and \`nice-code --changed --project .\` before handoff.\n`;

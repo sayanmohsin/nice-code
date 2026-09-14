@@ -13,7 +13,9 @@ use std::{
 };
 use walkdir::WalkDir;
 
-const EXTENSIONS: &[&str] = &["js", "jsx", "ts", "tsx", "mjs", "cjs", "rs", "go", "dart"];
+const EXTENSIONS: &[&str] = &[
+    "js", "jsx", "ts", "tsx", "mjs", "cjs", "rs", "go", "dart", "java",
+];
 const IGNORED: &[&str] = &[
     ".git",
     "node_modules",
@@ -63,7 +65,7 @@ enum Format {
     name = "nice-code",
     version,
     about = "Fast, source-backed engineering guardrails",
-    long_about = "Review JavaScript, TypeScript, Rust, Go, and Dart projects with a fast Rust engine.\n\nUse --changed for a focused local review, --all for a deliberate full scan, and --format agent or --format json for automation.",
+    long_about = "Review JavaScript, TypeScript, Rust, Go, Dart, and Java projects with a fast Rust engine.\n\nUse --changed for a focused local review, --all for a deliberate full scan, and --format agent or --format json for automation.",
     after_help = "Examples:\n  nice-code --changed --project .\n  nice-code --all --project .\n  nice-code --changed --format agent --project .\n  nice-code --changed --ci --format sarif --project . > nice-code.sarif\n  nice-code --explain AP-LOG-001\n\nExit status is non-zero only when the report's exit decision is blocked."
 )]
 struct Args {
@@ -227,6 +229,8 @@ struct Detected {
     rust: bool,
     go: bool,
     dart: bool,
+    java: bool,
+    spring_boot: bool,
     typescript: bool,
     react: bool,
     astro: bool,
@@ -738,6 +742,35 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
         {
             findings.push(finding("AP-LOG-002", "Unstructured production output", "logging", "warning", "REVIEW", path, index + 1, "Review whether this output is structured, contextual, and appropriate for production.", "https://microsoft.github.io/rust-guidelines/guidelines/universal/"));
         }
+        if is_java(path) && !is_non_production_review_context(path) {
+            let normalized = lower.replace([' ', '\t'], "");
+            if normalized.contains("system.out.") || normalized.contains("system.err.") {
+                findings.push(finding(
+                    "AP-LOG-003",
+                    "Unstructured Java console output",
+                    "logging",
+                    "warning",
+                    "REVIEW",
+                    path,
+                    index + 1,
+                    "Review whether console output should use the application's configured structured logger with context and an appropriate level.",
+                    "https://docs.spring.io/spring-boot/4.2/reference/features/logging.html",
+                ));
+            }
+            if normalized.contains("printstacktrace(") {
+                findings.push(finding(
+                "AP-LOG-004",
+                "Direct stack-trace output",
+                "logging",
+                "warning",
+                "REVIEW",
+                path,
+                index + 1,
+                "Review whether the exception is logged through the application's configured logger with context and an appropriate level.",
+                "https://docs.spring.io/spring-boot/4.2/reference/features/logging.html",
+            ));
+            }
+        }
         if is_hardcoded_secret_assignment(line, lower) && !context.is_test {
             findings.push(finding("AP-SEC-001", "Possible hardcoded secret", "security", "critical", "FAIL", path, index + 1, "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", "https://docs.aws.amazon.com/wellarchitected/latest/framework/security.html"));
         }
@@ -783,6 +816,9 @@ fn is_js(path: &str) -> bool {
     [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]
         .iter()
         .any(|e| path.ends_with(e))
+}
+fn is_java(path: &str) -> bool {
+    path.ends_with(".java")
 }
 fn is_test_file(path: &str, content: &str) -> bool {
     let lower = path.to_ascii_lowercase();
@@ -971,6 +1007,8 @@ fn detect(project: &Path) -> Detected {
         rust: has("Cargo.toml"),
         go: has("go.mod"),
         dart: has("pubspec.yaml"),
+        java: has_java_source(project),
+        spring_boot: has_spring_boot(project),
         typescript,
         react: false,
         astro: false,
@@ -979,10 +1017,25 @@ fn detect(project: &Path) -> Detected {
         next: false,
         vite: has("vite.config.ts") || has("vite.config.js"),
         workspace_packages: Vec::new(),
-        profiles,
+        profiles: {
+            if has_java_source(project) {
+                profiles.push("java".into());
+            }
+            if has_spring_boot(project) {
+                profiles.push("spring-boot".into());
+            }
+            profiles
+        },
     }
 }
 fn native_tools(project: &Path) -> Vec<ToolResult> {
+    native_tool_commands(project)
+        .par_iter()
+        .map(|(label, command, args)| run_tool(project, label, command, args))
+        .collect()
+}
+
+fn native_tool_commands(project: &Path) -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
     let mut commands = Vec::new();
     if project.join("Cargo.toml").exists() {
         commands.push((
@@ -997,10 +1050,71 @@ fn native_tools(project: &Path) -> Vec<ToolResult> {
     if project.join("pubspec.yaml").exists() {
         commands.push(("dart analyze", "dart", vec!["analyze"]));
     }
+    if project.join("mvnw").exists() {
+        commands.push(("./mvnw test", "./mvnw", vec!["test"]));
+    } else if project.join("pom.xml").exists() {
+        commands.push(("mvn test", "mvn", vec!["test"]));
+    }
+    if project.join("gradlew").exists() {
+        commands.push(("./gradlew test", "./gradlew", vec!["test"]));
+    } else if project.join("build.gradle").exists() || project.join("build.gradle.kts").exists() {
+        commands.push(("gradle test", "gradle", vec!["test"]));
+    }
     commands
-        .par_iter()
-        .map(|(label, command, args)| run_tool(project, label, command, args))
-        .collect()
+}
+
+fn has_java_source(project: &Path) -> bool {
+    WalkDir::new(project)
+        .into_iter()
+        .filter_entry(|entry| {
+            entry.file_type().is_file()
+                || !entry
+                    .file_name()
+                    .to_str()
+                    .is_some_and(|name| IGNORED.contains(&name))
+        })
+        .filter_map(Result::ok)
+        .any(|entry| {
+            entry
+                .path()
+                .extension()
+                .is_some_and(|extension| extension == "java")
+        })
+}
+
+fn has_spring_boot(project: &Path) -> bool {
+    project
+        .join("pom.xml")
+        .to_str()
+        .and_then(|path| fs::read_to_string(path).ok())
+        .is_some_and(|text| text.contains("spring-boot"))
+        || ["build.gradle", "build.gradle.kts"].iter().any(|name| {
+            project
+                .join(name)
+                .to_str()
+                .and_then(|path| fs::read_to_string(path).ok())
+                .is_some_and(|text| text.contains("spring-boot"))
+        })
+        || WalkDir::new(project)
+            .into_iter()
+            .filter_entry(|entry| {
+                entry.file_type().is_file()
+                    || !entry
+                        .file_name()
+                        .to_str()
+                        .is_some_and(|name| IGNORED.contains(&name))
+            })
+            .filter_map(Result::ok)
+            .filter(|entry| {
+                entry
+                    .path()
+                    .extension()
+                    .is_some_and(|extension| extension == "java")
+            })
+            .filter_map(|entry| fs::read_to_string(entry.path()).ok())
+            .any(|text| {
+                text.contains("@SpringBootApplication") || text.contains("org.springframework.boot")
+            })
 }
 fn run_tool(project: &Path, label: &str, command: &str, args: &[&str]) -> ToolResult {
     match Command::new(command)
@@ -1156,6 +1270,20 @@ fn check_metadata(
             "Use structured, contextual logging appropriate for production.",
             "https://microsoft.github.io/rust-guidelines/guidelines/universal/",
         )),
+        "AP-LOG-003" => Some((
+            "Unstructured Java console output",
+            "logging",
+            "warning",
+            "Use the application's configured logger with structured context instead of direct console output.",
+            "https://docs.spring.io/spring-boot/4.2/reference/features/logging.html",
+        )),
+        "AP-LOG-004" => Some((
+            "Direct stack-trace output",
+            "logging",
+            "warning",
+            "Log exceptions through the configured logger with context and an appropriate level; preserve the cause.",
+            "https://docs.spring.io/spring-boot/4.2/reference/features/logging.html",
+        )),
         "AP-SEC-001" => Some((
             "Possible hardcoded secret",
             "security",
@@ -1198,6 +1326,23 @@ mod tests {
         assert!(relative_source(project, &project.join("pnpm-lock.yaml")).is_none());
         assert!(relative_source(project, &project.join("packages/ui/src/index.ts")).is_some());
     }
+
+    #[test]
+    fn prefers_project_wrappers_for_java_builds() {
+        let root = std::env::temp_dir().join(format!("nice-code-java-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("pom.xml"), "<project/>").unwrap();
+        fs::write(root.join("mvnw"), "#!/bin/sh\n").unwrap();
+        fs::write(root.join("build.gradle"), "plugins { id 'java' }").unwrap();
+        fs::write(root.join("gradlew"), "#!/bin/sh\n").unwrap();
+        let commands = native_tool_commands(&root);
+        assert_eq!(
+            commands.iter().map(|entry| entry.0).collect::<Vec<_>>(),
+            vec!["./mvnw test", "./gradlew test"]
+        );
+        let _ = fs::remove_dir_all(root);
+    }
     #[test]
     fn detects_rust_secret_log() {
         let mut parser = SyntaxParser::new();
@@ -1207,6 +1352,30 @@ mod tests {
             &mut parser,
         );
         assert!(findings.iter().any(|f| f.id == "AP-LOG-001"));
+    }
+
+    #[test]
+    fn detects_java_console_logging_but_allows_structured_logger() {
+        let mut parser = SyntaxParser::new();
+        let findings = analyze_with_parser(
+            "src/main/java/App.java",
+            "class App { void run(Exception error) { System.out.println(\"started\"); error.printStackTrace(); logger.info(\"started\"); } }",
+            &mut parser,
+        );
+        assert!(findings.iter().any(|f| f.id == "AP-LOG-003"));
+        assert!(findings.iter().any(|f| f.id == "AP-LOG-004"));
+        assert_eq!(findings.iter().filter(|f| f.id == "AP-LOG-003").count(), 1);
+    }
+
+    #[test]
+    fn does_not_report_java_console_output_in_tests() {
+        let mut parser = SyntaxParser::new();
+        let findings = analyze_with_parser(
+            "src/test/java/AppTest.java",
+            "class AppTest { void test() { System.out.println(\"fixture\"); } }",
+            &mut parser,
+        );
+        assert!(!findings.iter().any(|f| f.id == "AP-LOG-003"));
     }
 
     #[test]

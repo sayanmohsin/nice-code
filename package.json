@@ -43,7 +43,7 @@
     "init": "bun scripts/init.mts",
     "skills": "node scripts/skills.mjs",
     "skills:check": "node scripts/skills.mjs check",
-    "test": "cargo test --manifest-path engine/Cargo.toml",
+    "test": "cargo test --manifest-path engine/Cargo.toml && node --test scripts/project.test.mjs",
     "test:bun": "bun scripts/test-engine.ts",
     "check:docs": "bun scripts/check-docs.mts",
     "check:version": "bun scripts/check-version.mts",

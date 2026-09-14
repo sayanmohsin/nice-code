@@ -3,6 +3,10 @@
 Pull requests run the fast validation gate. Pushes to `main` run the complete
 Rust, launcher, package, security, documentation, and full-scan checks.
 
+Java projects should run their native Maven or Gradle compiler, formatter, static-analysis, and
+test checks alongside Nice Code. Nice Code adds conservative Java logging checks and review
+guidance for Spring Boot boundaries, resilience, observability, dependencies, and testing.
+
 ```yaml
 - name: Nice Code
   run: nice-code --project . --changed --ci --format sarif > nice-code.sarif

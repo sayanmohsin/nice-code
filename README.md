@@ -17,7 +17,7 @@ formatters, compilers, and linters cannot fully judge:
 
 Nice Code is deliberately not a replacement for language tooling. Its Rust
 engine is the only analysis engine and adds a conservative, evidence-oriented
-review on top of Clippy, Biome, TypeScript, Dart Analyzer, `gofmt`, framework
+review on top of Clippy, Biome, TypeScript, Dart Analyzer, `gofmt`, Maven/Gradle, framework
 checks, and project-specific tests. Node.js provides the user-facing launcher;
 Bun is used for development tooling around that engine.
 
@@ -120,7 +120,7 @@ nice-code \
   --all
 ```
 
-The checker detects Rust, Go, Dart, TypeScript, React, Astro, and Svelte projects from their
+The checker detects Rust, Go, Dart, Java, Spring Boot, TypeScript, React, Astro, and Svelte projects from their
 standard manifest files. It scans supported source files and does not modify the target project.
 
 See the complete built-in reference with:
@@ -289,6 +289,7 @@ In `--ci` mode, Nice Code uses tools already available in the target project:
 - Biome: local `biome check .`
 - Go: `go vet ./...`
 - Dart: `dart analyze`
+- Java: Maven or Gradle tests when the project declares `pom.xml`, `build.gradle`, or a wrapper
 
 Nice Code does not install dependencies or download tools during a check. If a tool or manifest is
 missing, it is skipped and the result remains explicit in JSON output.
@@ -356,6 +357,9 @@ Read the [pattern index](patterns/index.md) for the complete catalog. Current pa
 - Reliability and operations
 - React and UI behavior
 - Code review and AI-generated changes
+- Java and Spring Boot architecture
+- Java logging and coding standards
+- Java practices from public engineering organizations
 
 ## Adding or changing a pattern
 
@@ -381,7 +385,8 @@ easy to improve without silently changing it or copying an entire external guide
 ## Sources
 
 The source registry is in [`sources/index.md`](sources/index.md). It currently references public
-guidance from Microsoft, Google, React, Vercel, Airbnb, Dart, Go, AWS, and MDN.
+guidance from Microsoft, Google, React, Vercel, Airbnb, Dart, Go, Java, Spring, Netflix, Spotify,
+Uber, LinkedIn, Salesforce, Meta, AWS, and MDN.
 
 Nice Code summarizes and attributes external guidance; it does not reproduce complete third-party
 documents. Sources are reviewed and dated so upstream changes can be revisited deliberately.

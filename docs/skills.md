@@ -14,6 +14,11 @@ nice-code skills update --project .
 nice-code skills update --project . --apply
 ```
 
+The bundled `java-spring-boot` skill is recommended for Java source projects and Spring Boot
+projects. It provides review guidance for dependency direction, constructor injection, typed
+configuration, transactions, API boundaries, operations, testing, and intentional use of design
+patterns. It complements Maven, Gradle, the Java compiler, and Spring's own test support.
+
 Projects should pin installed skills in `.nice-code/skills.lock.json`. Updates
 are detected explicitly and should be applied through a reviewed diff; normal
 Nice Code scans never rewrite project guidance or fetch remote skill content.

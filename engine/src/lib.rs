@@ -8,6 +8,7 @@ pub enum LanguageKind {
     Rust,
     Go,
     Dart,
+    Java,
 }
 
 pub fn language_for_path(path: &str) -> Option<LanguageKind> {
@@ -19,6 +20,7 @@ pub fn language_for_path(path: &str) -> Option<LanguageKind> {
         "rs" => LanguageKind::Rust,
         "go" => LanguageKind::Go,
         "dart" => LanguageKind::Dart,
+        "java" => LanguageKind::Java,
         _ => return None,
     })
 }
@@ -50,6 +52,7 @@ impl SyntaxParser {
             LanguageKind::Rust => tree_sitter_rust::LANGUAGE.into(),
             LanguageKind::Go => tree_sitter_go::LANGUAGE.into(),
             LanguageKind::Dart => tree_sitter_dart::LANGUAGE.into(),
+            LanguageKind::Java => tree_sitter_java::LANGUAGE.into(),
         };
         set_language(&mut self.parser, language);
         self.parser
@@ -79,6 +82,10 @@ mod tests {
         assert_eq!(language_for_path("src/lib.rs"), Some(LanguageKind::Rust));
         assert_eq!(language_for_path("src/main.dart"), Some(LanguageKind::Dart));
         assert_eq!(
+            language_for_path("src/main/java/App.java"),
+            Some(LanguageKind::Java)
+        );
+        assert_eq!(
             language_for_path("src/App.ts"),
             Some(LanguageKind::TypeScript)
         );
@@ -102,5 +109,6 @@ mod tests {
             "export function App() { return <main>Hello</main>; }"
         ));
         assert!(!parser.parse_has_errors("main.go", "package main\nfunc main() {}"));
+        assert!(!parser.parse_has_errors("src/App.java", "class App { void run() {} }"));
     }
 }

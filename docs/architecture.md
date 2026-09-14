@@ -26,5 +26,5 @@ The review path is:
 4. In `--ci` mode, the engine runs available native project tools and retains their status.
 5. Results are consumed locally, by a commit hook, by an agent, or in CI.
 
-The checker detects the project ecosystem and scans changed files by default.
+The checker detects the project ecosystem—including Java and Spring Boot—and scans changed files by default.
 Full scans, baselines, and audits are deliberate operations.

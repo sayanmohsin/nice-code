@@ -28,7 +28,7 @@ features:
     details: Give coding agents compact, stable findings instead of a wall of context.
   - icon: ⌘
     title: Works with your tools
-    details: Complement TypeScript, Rust, Go, Dart, framework tooling, and CI.
+    details: Complement Java/Spring Boot, TypeScript, Rust, Go, Dart, framework tooling, and CI.
   - icon: ✦
     title: Starts projects well
     details: Discover the right profiles and manage versioned agent skills without guessing.

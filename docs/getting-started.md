@@ -58,3 +58,7 @@ nice-code skills outdated --project .
 ```
 
 Start with changed files. Treat full-scan findings as a review queue until the project has classified its baseline. Add `.nice-code.json` when the project needs profiles, ignored paths, severity overrides, or narrow exceptions.
+
+For Java projects, Nice Code discovers `.java` files and identifies Maven, Gradle, and Spring Boot
+projects. In `--ci` mode it runs declared Maven or Gradle tests when available; the Java compiler,
+formatter, Checkstyle, SpotBugs, and Spring tests remain authoritative.

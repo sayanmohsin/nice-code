@@ -26,6 +26,19 @@
       "license": "Reference catalog; see source",
       "mode": "adapted",
       "path": "design-system/SKILL.md"
+    },
+    {
+      "id": "java-spring-boot",
+      "name": "Java and Spring Boot Quality",
+      "description": "Java language, Spring Boot architecture, operations, testing, and design-pattern guidance for agents and reviewers.",
+      "category": "backend",
+      "ecosystems": ["java", "spring-boot"],
+      "version": "0.1.0",
+      "source": "https://docs.spring.io/spring-boot/reference/",
+      "revision": "2026-09-14-curated",
+      "license": "Reference guidance; see sources",
+      "mode": "adapted",
+      "path": "java-spring-boot/SKILL.md"
     }
   ]
 }

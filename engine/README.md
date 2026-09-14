@@ -12,7 +12,7 @@ cargo run --manifest-path engine/Cargo.toml -- \
   --format agent
 ```
 
-The engine scans JavaScript, TypeScript, Rust, Go, and Dart source files. It
+The engine scans JavaScript, TypeScript, Rust, Go, Dart, and Java source files. It
 supports text, JSON, SARIF, and agent output, plus the existing native-tool
 checks in `--ci` mode.
 
