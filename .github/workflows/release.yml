@@ -171,12 +171,11 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: v${{ needs.release-please.outputs.version }}
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 12.4.1
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
           registry-url: https://registry.npmjs.org
       - name: Publish if missing
         env:
