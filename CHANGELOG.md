@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/sayanmohsin/nice-code/compare/v0.3.1...v0.3.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* use npm cache for npm publish ([419fbbd](https://github.com/sayanmohsin/nice-code/commit/419fbbd0301e2895a1c15ec51d2ef9da751fcd9d))
+
 ## [0.3.1](https://github.com/sayanmohsin/nice-code/compare/v0.3.0...v0.3.1) (2026-09-15)
 
 
