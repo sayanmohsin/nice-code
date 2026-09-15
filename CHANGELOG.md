@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/sayanmohsin/nice-code/compare/v0.3.0...v0.3.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* install esbuild for vitepress build ([f36f5a6](https://github.com/sayanmohsin/nice-code/commit/f36f5a6f144e10b02bce6400c43c9e0418255fac))
+
 ## [0.3.0](https://github.com/sayanmohsin/nice-code/compare/v0.2.1...v0.3.0) (2026-09-15)
 
 
