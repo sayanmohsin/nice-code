@@ -172,6 +172,8 @@ jobs:
         with:
           ref: v${{ needs.release-please.outputs.version }}
       - uses: pnpm/action-setup@v6
+        with:
+          version: 12.4.1
       - uses: actions/setup-node@v5
         with:
           node-version: 24
