@@ -41,6 +41,7 @@ export default defineConfig({
             { text: "Profiles", link: "/profiles" },
             { text: "Pattern lifecycle", link: "/lifecycle" },
             { text: "Sources", link: "/sources" },
+            { text: "Knowledge and project rules", link: "/knowledge" },
           ],
         },
         {

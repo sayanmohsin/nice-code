@@ -2,6 +2,20 @@
   "schemaVersion": 1,
   "skills": [
     {
+      "id": "nice-code",
+      "name": "Nice Code Universal Engineering Quality",
+      "description": "Generic source-backed engineering guidance routed across all detected languages, frameworks, and project rules.",
+      "category": "engineering",
+      "ecosystems": [],
+      "version": "0.3.0",
+      "source": "https://github.com/sayanmohsin/nice-code",
+      "revision": "unified-routing",
+      "license": "MIT",
+      "mode": "adapted",
+      "path": "nice-code/SKILL.md",
+      "primary": true
+    },
+    {
       "id": "web-interface",
       "name": "Web Interface Quality",
       "description": "Accessible, responsive, resilient web-interface guidance for agents and reviewers.",
@@ -12,7 +26,9 @@
       "revision": "living-guidelines",
       "license": "Reference guidance; see source",
       "mode": "adapted",
-      "path": "web-interface/SKILL.md"
+      "path": "web-interface/SKILL.md",
+      "deprecated": true,
+      "aliasOf": "nice-code"
     },
     {
       "id": "design-system",
@@ -25,7 +41,9 @@
       "revision": "catalog",
       "license": "Reference catalog; see source",
       "mode": "adapted",
-      "path": "design-system/SKILL.md"
+      "path": "design-system/SKILL.md",
+      "deprecated": true,
+      "aliasOf": "nice-code"
     },
     {
       "id": "java-spring-boot",
@@ -38,7 +56,9 @@
       "revision": "2026-09-14-curated",
       "license": "Reference guidance; see sources",
       "mode": "adapted",
-      "path": "java-spring-boot/SKILL.md"
+      "path": "java-spring-boot/SKILL.md",
+      "deprecated": true,
+      "aliasOf": "nice-code"
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "@sayanmohsin/nice-code",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Source-backed engineering guardrails for reliable software development",
   "repository": {
     "type": "git",
@@ -19,6 +19,7 @@
     "guardrails"
   ],
   "type": "module",
+  "packageManager": "pnpm@12.4.1",
   "engines": {
     "node": ">=20"
   },
@@ -26,6 +27,11 @@
     "scripts/nice-code.mjs",
     "scripts/skills.mjs",
     "scripts/project.mjs",
+    "scripts/knowledge.mjs",
+    "scripts/rules.mjs",
+    "knowledge/",
+    "patterns/",
+    "sources/",
     "skills/",
     "SKILL.md",
     "README.md",
@@ -43,7 +49,15 @@
     "init": "bun scripts/init.mts",
     "skills": "node scripts/skills.mjs",
     "skills:check": "node scripts/skills.mjs check",
-    "test": "cargo test --manifest-path engine/Cargo.toml && node --test scripts/project.test.mjs",
+    "knowledge:check": "node scripts/knowledge.mjs check",
+    "knowledge:compile": "node scripts/knowledge.mjs compile",
+    "knowledge:outdated": "node scripts/knowledge.mjs outdated",
+    "knowledge:list": "node scripts/knowledge.mjs list",
+    "rules": "node scripts/rules.mjs",
+    "check:contributor": "cargo fmt --manifest-path engine/Cargo.toml -- --check && npm run knowledge:check && npm run skills:check && npm run check:docs && npm run check:version && bun scripts/test-engine.ts && npm test && npm run pack:check && git diff --check",
+    "hooks:install": "node scripts/pre-commit.mjs --install",
+    "precommit": "node scripts/pre-commit.mjs",
+    "test": "cargo test --manifest-path engine/Cargo.toml && node --test scripts/project.test.mjs scripts/knowledge.test.mjs scripts/package.test.mjs scripts/rules.test.mjs",
     "test:bun": "bun scripts/test-engine.ts",
     "check:docs": "bun scripts/check-docs.mts",
     "check:version": "bun scripts/check-version.mts",

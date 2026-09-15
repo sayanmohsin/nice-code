@@ -17,7 +17,7 @@ async function registry() {
 }
 
 function printSkill(skill) {
-  console.log(`${skill.id} ${skill.version} · ${skill.name}`);
+  console.log(`${skill.id} ${skill.version} · ${skill.name}${skill.deprecated ? " (deprecated alias)" : ""}`);
   console.log(`  ${skill.description}`);
   console.log(`  ${skill.source} @ ${skill.revision}`);
 }
@@ -34,6 +34,8 @@ async function main() {
       if (!skill.version || !skill.source || !skill.revision || !skill.license || !skill.path) {
         throw new Error(`Incomplete metadata for skill: ${skill.id}`);
       }
+      if (skill.primary && skill.deprecated) throw new Error(`Primary skill cannot be deprecated: ${skill.id}`);
+      if (skill.deprecated && !data.skills.some((candidate) => candidate.id === skill.aliasOf && candidate.primary)) throw new Error(`Invalid skill alias target: ${skill.id}`);
       if (!existsSync(join(root, "skills", skill.path))) {
         throw new Error(`Missing skill file for ${skill.id}: ${skill.path}`);
       }

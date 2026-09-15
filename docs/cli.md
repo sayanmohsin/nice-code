@@ -52,7 +52,19 @@ nice-code advise --project .
 nice-code advise --project . --format json
 nice-code init --project .
 nice-code init --project . --apply
+
+# Create and validate project custom rules
+nice-code rules init --project .
+nice-code rules validate --project .
+nice-code rules compile --project . --apply
 ```
+
+Project-owned `.nice-code/checks.json` rules and Markdown rules are loaded automatically by the
+normal scan. Use `nice-code rules validate` before CI; `rules compile --apply` converts explicit
+Markdown checks into JSON and refuses to overwrite an existing JSON rule file. Maintainer-only
+knowledge commands belong to the Nice Code repository:
+`npm run knowledge:check`, `npm run knowledge:outdated`, and `npm run knowledge:list`.
+Consumer projects do not need to run them; see [knowledge and project-owned rules](/knowledge).
 
 For the complete option list and examples, run `nice-code --help`. Use
 `nice-code --version` to confirm the installed launcher version.

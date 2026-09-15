@@ -121,6 +121,15 @@ async function main() {
     process.exitCode = result.status ?? 2;
     return;
   }
+  if (process.argv[2] === "rules") {
+    const result = spawnSync(
+      process.execPath,
+      [join(PACKAGE_ROOT, "scripts", "rules.mjs"), ...process.argv.slice(3)],
+      { stdio: "inherit" },
+    );
+    process.exitCode = result.status ?? 2;
+    return;
+  }
   const candidates = localCandidates();
   let engine;
   for (const candidate of candidates)
@@ -129,7 +138,10 @@ async function main() {
       break;
     }
   engine ??= await downloadEngine();
-  const result = spawnSync(engine, process.argv.slice(2), { stdio: "inherit" });
+  const result = spawnSync(engine, process.argv.slice(2), {
+    stdio: "inherit",
+    env: { ...process.env, NICE_CODE_KNOWLEDGE_ROOT: join(PACKAGE_ROOT, "knowledge") },
+  });
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 2;
 }

@@ -1,6 +1,7 @@
 use clap::{Parser, ValueEnum};
 use nice_code_engine::SyntaxParser;
 use rayon::prelude::*;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::io::IsTerminal;
 use std::{
@@ -175,6 +176,37 @@ struct ProjectConfig {
     exceptions: Vec<ExceptionRule>,
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+struct CustomCheck {
+    id: String,
+    title: String,
+    #[serde(default = "default_custom_category")]
+    category: String,
+    matcher: String,
+    #[serde(default, rename = "matcherType", alias = "matcher_type")]
+    matcher_type: String,
+    #[serde(default = "default_custom_severity")]
+    severity: String,
+    #[serde(default)]
+    status: Option<String>,
+    message: String,
+    #[serde(default)]
+    extensions: Vec<String>,
+    #[serde(default, alias = "appliesTo", alias = "scope")]
+    applies_to: Vec<String>,
+    #[serde(default)]
+    source: String,
+    #[serde(default)]
+    include_tests: bool,
+}
+
+fn default_custom_category() -> String {
+    "project".into()
+}
+fn default_custom_severity() -> String {
+    "warning".into()
+}
+
 #[derive(Clone, Debug, Deserialize)]
 struct ExceptionRule {
     #[serde(rename = "patternId", alias = "id")]
@@ -215,6 +247,8 @@ struct Report {
     detected: Detected,
     #[serde(rename = "filesScanned")]
     files_scanned: Vec<String>,
+    #[serde(rename = "projectResources")]
+    project_resources: Vec<String>,
     findings: Vec<Finding>,
     #[serde(rename = "customFindings")]
     custom_findings: Vec<Finding>,
@@ -272,6 +306,14 @@ fn main() {
     let mode = if args.all { "all" } else { "changed" };
     let discovery_started = Instant::now();
     let config = load_config(&project);
+    let custom_checks = match load_custom_checks(&project) {
+        Ok(checks) => checks,
+        Err(error) => {
+            eprintln!("Nice Code: {error}");
+            std::process::exit(2);
+        }
+    };
+    let builtin_checks = load_builtin_checks();
     let files = discover(&project, mode, &config);
     let discovery_ms = discovery_started.elapsed().as_secs_f64() * 1000.0;
     let analysis_started = Instant::now();
@@ -323,7 +365,16 @@ fn main() {
             .then(a.line.cmp(&b.line))
             .then(a.id.cmp(&b.id))
     });
-    let findings = apply_config(findings, &config);
+    let mut findings = apply_config(findings, &config);
+    let detected = detect(&project);
+    findings.extend(custom_findings(&files, &builtin_checks, &detected));
+    findings.extend(custom_findings(&files, &custom_checks, &detected));
+    findings.sort_by(|a, b| {
+        a.file
+            .cmp(&b.file)
+            .then(a.line.cmp(&b.line))
+            .then(a.id.cmp(&b.id))
+    });
     if let Some(path) = &args.write_baseline {
         save_baseline(path, &findings);
     }
@@ -382,12 +433,13 @@ fn main() {
             None
         },
         active_profiles: if config.profiles.is_empty() {
-            vec!["default".to_string()]
+            detected.profiles.clone()
         } else {
             config.profiles.clone()
         },
-        detected: detect(&project),
+        detected,
         files_scanned: files.iter().map(|(p, _)| p.clone()).collect(),
+        project_resources: project_resources(&project),
         custom_findings: displayed_findings.clone(),
         findings: displayed_findings,
         native_tools: tools,
@@ -423,6 +475,300 @@ fn load_config(project: &Path) -> ProjectConfig {
         .and_then(|path| fs::read_to_string(path).ok())
         .and_then(|contents| serde_json::from_str(&contents).ok())
         .unwrap_or_default()
+}
+
+fn load_custom_checks(project: &Path) -> Result<Vec<CustomCheck>, String> {
+    let mut checks = Vec::new();
+    let json_path = project.join(".nice-code/checks.json");
+    if json_path.exists() {
+        let contents = fs::read_to_string(&json_path)
+            .map_err(|error| format!("cannot read {}: {error}", json_path.display()))?;
+        let value: serde_json::Value = serde_json::from_str(&contents)
+            .map_err(|error| format!("invalid .nice-code/checks.json: {error}"))?;
+        let entries = value.get("checks").unwrap_or(&value);
+        checks.extend(
+            serde_json::from_value::<Vec<CustomCheck>>(entries.clone())
+                .map_err(|error| format!("invalid custom check definition: {error}"))?,
+        );
+    }
+    let rules = project.join(".nice-code/rules");
+    let legacy_skills = project.join(".nice-code/skills");
+    let rule_directory = if rules.exists() { rules } else { legacy_skills };
+    if rule_directory.exists() {
+        for entry in WalkDir::new(&rule_directory)
+            .into_iter()
+            .filter_map(Result::ok)
+        {
+            if entry.file_type().is_file()
+                && entry.path().extension().is_some_and(|ext| ext == "md")
+            {
+                let contents = fs::read_to_string(entry.path())
+                    .map_err(|error| format!("cannot read {}: {error}", entry.path().display()))?;
+                checks.extend(
+                    parse_skill_checks(&contents)
+                        .map_err(|error| format!("{}: {error}", entry.path().display()))?,
+                );
+            }
+        }
+    }
+    let mut unique = Vec::new();
+    for check in checks {
+        validate_custom_check(&check)?;
+        if let Some(previous) = unique
+            .iter()
+            .find(|item: &&CustomCheck| item.id == check.id)
+        {
+            if !same_custom_rule(previous, &check) {
+                return Err(format!("duplicate custom check id: {}", check.id));
+            }
+        } else {
+            unique.push(check);
+        }
+    }
+    Ok(unique)
+}
+
+fn same_custom_rule(left: &CustomCheck, right: &CustomCheck) -> bool {
+    left.id == right.id
+        && left.title == right.title
+        && left.matcher == right.matcher
+        && left.message == right.message
+}
+
+fn load_builtin_checks() -> Vec<CustomCheck> {
+    let mut paths = Vec::new();
+    if let Some(root) = std::env::var_os("NICE_CODE_KNOWLEDGE_ROOT") {
+        paths.push(PathBuf::from(root).join("rules.json"));
+    }
+    if let Ok(root) = std::env::current_dir() {
+        paths.push(root.join("knowledge/rules.json"));
+    }
+    if let Some(root) = Path::new(env!("CARGO_MANIFEST_DIR")).parent() {
+        paths.push(root.join("knowledge/rules.json"));
+    }
+    paths
+        .into_iter()
+        .filter_map(|path| fs::read_to_string(path).ok())
+        .find_map(|contents| {
+            serde_json::from_str::<serde_json::Value>(&contents)
+                .ok()
+                .and_then(|value| serde_json::from_value(value.get("rules")?.clone()).ok())
+        })
+        .unwrap_or_default()
+}
+
+fn project_resources(project: &Path) -> Vec<String> {
+    let root = project.join(".nice-code/resources");
+    let mut resources = WalkDir::new(root)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().is_file())
+        .filter_map(|entry| {
+            entry
+                .path()
+                .strip_prefix(project)
+                .ok()
+                .map(|path| path.to_string_lossy().replace('\\', "/"))
+        })
+        .collect::<Vec<_>>();
+    resources.sort();
+    resources
+}
+
+fn validate_custom_check(check: &CustomCheck) -> Result<(), String> {
+    if !check.id.starts_with("CUSTOM-") || check.id.len() <= 7 {
+        return Err(format!(
+            "custom check id must start with CUSTOM-: {}",
+            check.id
+        ));
+    }
+    if check.title.trim().is_empty() || check.message.trim().is_empty() || check.matcher.is_empty()
+    {
+        return Err(format!(
+            "custom check {} requires title, matcher, and message",
+            check.id
+        ));
+    }
+    if !check.matcher_type.is_empty()
+        && !matches!(
+            check.matcher_type.to_ascii_lowercase().as_str(),
+            "literal" | "regex"
+        )
+    {
+        return Err(format!(
+            "custom check {} has unsupported matcherType",
+            check.id
+        ));
+    }
+    if check.matcher_type.eq_ignore_ascii_case("regex") && Regex::new(&check.matcher).is_err() {
+        return Err(format!("custom check {} has an invalid regex", check.id));
+    }
+    Ok(())
+}
+
+fn parse_skill_checks(contents: &str) -> Result<Vec<CustomCheck>, String> {
+    let mut lines = contents.lines();
+    if lines.next().map(str::trim) != Some("---") {
+        return Ok(Vec::new());
+    }
+    let mut checks = Vec::new();
+    let mut current: Option<CustomCheck> = None;
+    let mut in_checks = false;
+    for raw in lines {
+        let line = raw.trim();
+        if line == "---" {
+            break;
+        }
+        if line == "checks:" {
+            in_checks = true;
+            continue;
+        }
+        if !in_checks {
+            continue;
+        }
+        if let Some(value) = line.strip_prefix("- id:") {
+            if let Some(check) = current.take() {
+                checks.push(check);
+            }
+            current = Some(empty_custom_check(unquote(value.trim())));
+            continue;
+        }
+        let Some(check) = current.as_mut() else {
+            continue;
+        };
+        let Some((key, value)) = line.split_once(':') else {
+            continue;
+        };
+        let value = unquote(value.trim());
+        match key.trim() {
+            "title" => check.title = value,
+            "category" => check.category = value,
+            "matcher" => check.matcher = value,
+            "matcherType" | "matcher_type" => check.matcher_type = value,
+            "severity" => check.severity = value,
+            "status" => check.status = Some(value),
+            "message" => check.message = value,
+            "source" => check.source = value,
+            "extensions" => check.extensions = parse_list(&value),
+            "appliesTo" | "applies_to" | "scope" => check.applies_to = parse_list(&value),
+            "includeTests" | "include_tests" => check.include_tests = value == "true",
+            _ => {}
+        }
+    }
+    if let Some(check) = current {
+        checks.push(check);
+    }
+    Ok(checks)
+}
+
+fn empty_custom_check(id: String) -> CustomCheck {
+    CustomCheck {
+        id,
+        title: String::new(),
+        category: default_custom_category(),
+        matcher: String::new(),
+        matcher_type: String::new(),
+        severity: default_custom_severity(),
+        status: None,
+        message: String::new(),
+        extensions: Vec::new(),
+        applies_to: Vec::new(),
+        source: String::new(),
+        include_tests: false,
+    }
+}
+
+fn unquote(value: &str) -> String {
+    value.trim_matches(['"', '\'']).to_string()
+}
+
+fn parse_list(value: &str) -> Vec<String> {
+    value
+        .trim_matches(['[', ']'])
+        .split(',')
+        .map(|item| unquote(item.trim()))
+        .filter(|item| !item.is_empty())
+        .collect()
+}
+
+fn custom_findings(
+    files: &[(String, String)],
+    checks: &[CustomCheck],
+    detected: &Detected,
+) -> Vec<Finding> {
+    files
+        .par_iter()
+        .flat_map(|(path, content)| {
+            checks
+                .iter()
+                .filter_map(|check| {
+                    let extension = Path::new(path)
+                        .extension()
+                        .and_then(|ext| ext.to_str())
+                        .unwrap_or("");
+                    if !check.extensions.is_empty()
+                        && !check.extensions.iter().any(|item| {
+                            item.trim_start_matches('.').eq_ignore_ascii_case(extension)
+                        })
+                    {
+                        return None;
+                    }
+                    if !check.applies_to.is_empty()
+                        && !check.applies_to.iter().any(|profile| {
+                            detected
+                                .profiles
+                                .iter()
+                                .any(|active| active.eq_ignore_ascii_case(profile))
+                        })
+                    {
+                        return None;
+                    }
+                    if !check.include_tests
+                        && (is_test_file(path, content) || is_non_production_review_context(path))
+                    {
+                        return None;
+                    }
+                    let regex = check
+                        .matcher_type
+                        .eq_ignore_ascii_case("regex")
+                        .then(|| Regex::new(&check.matcher).ok())
+                        .flatten();
+                    content.lines().enumerate().find_map(|(index, line)| {
+                        let matched = regex.as_ref().map_or_else(
+                            || line.contains(&check.matcher),
+                            |pattern| pattern.is_match(line),
+                        );
+                        matched.then(|| {
+                            finding(
+                                &check.id,
+                                &check.title,
+                                &check.category,
+                                &check.severity,
+                                normalized_custom_status(check),
+                                path,
+                                index + 1,
+                                &check.message,
+                                &check.source,
+                            )
+                        })
+                    })
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+fn normalized_custom_status(check: &CustomCheck) -> &str {
+    let status = check.status.as_deref().unwrap_or("REVIEW");
+    if status.eq_ignore_ascii_case("FAIL") {
+        "FAIL"
+    } else if status.eq_ignore_ascii_case("WARN") || status.eq_ignore_ascii_case("WARNING") {
+        "WARN"
+    } else if status.eq_ignore_ascii_case("PASS") {
+        "PASS"
+    } else {
+        "REVIEW"
+    }
 }
 
 fn discover(project: &Path, mode: &str, config: &ProjectConfig) -> Vec<(String, String)> {
@@ -561,12 +907,32 @@ fn save_cache(project: &Path, cache: &HashMap<String, CacheEntry>) {
 }
 
 fn config_hash(project: &Path) -> u64 {
-    project
-        .join(".nice-code.json")
-        .to_str()
-        .and_then(|path| fs::read(path).ok())
-        .map(|bytes| hash_value(&bytes))
-        .unwrap_or(0)
+    let mut inputs = Vec::new();
+    for path in [
+        project.join(".nice-code.json"),
+        project.join(".nice-code/checks.json"),
+    ] {
+        if let Ok(bytes) = fs::read(path) {
+            inputs.extend(bytes);
+        }
+    }
+    let rules = project.join(".nice-code/rules");
+    let legacy_skills = project.join(".nice-code/skills");
+    for directory in [rules, legacy_skills] {
+        if !directory.exists() {
+            continue;
+        }
+        for entry in WalkDir::new(directory).into_iter().filter_map(Result::ok) {
+            if entry.file_type().is_file()
+                && entry.path().extension().is_some_and(|ext| ext == "md")
+            {
+                if let Ok(bytes) = fs::read(entry.path()) {
+                    inputs.extend(bytes);
+                }
+            }
+        }
+    }
+    hash_value(&inputs)
 }
 
 fn file_cache_key(path: &str, content: &str, config: u64) -> u64 {
@@ -742,35 +1108,6 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
         {
             findings.push(finding("AP-LOG-002", "Unstructured production output", "logging", "warning", "REVIEW", path, index + 1, "Review whether this output is structured, contextual, and appropriate for production.", "https://microsoft.github.io/rust-guidelines/guidelines/universal/"));
         }
-        if is_java(path) && !is_non_production_review_context(path) {
-            let normalized = lower.replace([' ', '\t'], "");
-            if normalized.contains("system.out.") || normalized.contains("system.err.") {
-                findings.push(finding(
-                    "AP-LOG-003",
-                    "Unstructured Java console output",
-                    "logging",
-                    "warning",
-                    "REVIEW",
-                    path,
-                    index + 1,
-                    "Review whether console output should use the application's configured structured logger with context and an appropriate level.",
-                    "https://docs.spring.io/spring-boot/4.2/reference/features/logging.html",
-                ));
-            }
-            if normalized.contains("printstacktrace(") {
-                findings.push(finding(
-                "AP-LOG-004",
-                "Direct stack-trace output",
-                "logging",
-                "warning",
-                "REVIEW",
-                path,
-                index + 1,
-                "Review whether the exception is logged through the application's configured logger with context and an appropriate level.",
-                "https://docs.spring.io/spring-boot/4.2/reference/features/logging.html",
-            ));
-            }
-        }
         if is_hardcoded_secret_assignment(line, lower) && !context.is_test {
             findings.push(finding("AP-SEC-001", "Possible hardcoded secret", "security", "critical", "FAIL", path, index + 1, "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", "https://docs.aws.amazon.com/wellarchitected/latest/framework/security.html"));
         }
@@ -816,9 +1153,6 @@ fn is_js(path: &str) -> bool {
     [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]
         .iter()
         .any(|e| path.ends_with(e))
-}
-fn is_java(path: &str) -> bool {
-    path.ends_with(".java")
 }
 fn is_test_file(path: &str, content: &str) -> bool {
     let lower = path.to_ascii_lowercase();
@@ -1356,11 +1690,10 @@ mod tests {
 
     #[test]
     fn detects_java_console_logging_but_allows_structured_logger() {
-        let mut parser = SyntaxParser::new();
-        let findings = analyze_with_parser(
-            "src/main/java/App.java",
-            "class App { void run(Exception error) { System.out.println(\"started\"); error.printStackTrace(); logger.info(\"started\"); } }",
-            &mut parser,
+        let findings = custom_findings(
+            &[("src/main/java/App.java".into(), "class App { void run(Exception error) { System.out.println(\"started\"); error.printStackTrace(); logger.info(\"started\"); } }".into())],
+            &load_builtin_checks(),
+            &Detected { rust: false, go: false, dart: false, java: true, spring_boot: false, typescript: false, react: false, astro: false, svelte: false, nestjs: false, next: false, vite: false, workspace_packages: vec![], profiles: vec!["java".into()] },
         );
         assert!(findings.iter().any(|f| f.id == "AP-LOG-003"));
         assert!(findings.iter().any(|f| f.id == "AP-LOG-004"));
@@ -1369,11 +1702,28 @@ mod tests {
 
     #[test]
     fn does_not_report_java_console_output_in_tests() {
-        let mut parser = SyntaxParser::new();
-        let findings = analyze_with_parser(
-            "src/test/java/AppTest.java",
-            "class AppTest { void test() { System.out.println(\"fixture\"); } }",
-            &mut parser,
+        let findings = custom_findings(
+            &[(
+                "src/test/java/AppTest.java".into(),
+                "class AppTest { void test() { System.out.println(\"fixture\"); } }".into(),
+            )],
+            &load_builtin_checks(),
+            &Detected {
+                rust: false,
+                go: false,
+                dart: false,
+                java: true,
+                spring_boot: false,
+                typescript: false,
+                react: false,
+                astro: false,
+                svelte: false,
+                nestjs: false,
+                next: false,
+                vite: false,
+                workspace_packages: vec![],
+                profiles: vec!["java".into()],
+            },
         );
         assert!(!findings.iter().any(|f| f.id == "AP-LOG-003"));
     }
@@ -1541,5 +1891,75 @@ mod tests {
         assert_eq!(metadata.0, "Secret-bearing log expression");
         assert_eq!(metadata.2, "critical");
         assert!(check_metadata("unknown-check").is_none());
+    }
+
+    #[test]
+    fn parses_markdown_skill_checks_without_building_json() {
+        let checks = parse_skill_checks(
+            "---\nid: team-java\nappliesTo: [java, spring-boot]\nchecks:\n  - id: CUSTOM-ACME-001\n    title: Avoid legacy dates\n    matcher: java.util.Date\n    severity: warning\n    message: Use java.time.\n---\nUse constructor injection.\n",
+        )
+        .unwrap();
+        assert_eq!(checks.len(), 1);
+        assert_eq!(checks[0].id, "CUSTOM-ACME-001");
+        validate_custom_check(&checks[0]).unwrap();
+    }
+
+    #[test]
+    fn custom_checks_match_literals_and_respect_scope_and_tests() {
+        let check = CustomCheck {
+            id: "CUSTOM-ACME-001".into(),
+            title: "Avoid legacy dates".into(),
+            category: "java".into(),
+            matcher: "java.util.Date".into(),
+            matcher_type: "literal".into(),
+            severity: "warning".into(),
+            status: Some("warning".into()),
+            message: "Use java.time.".into(),
+            extensions: vec!["java".into()],
+            applies_to: vec!["java".into()],
+            source: "https://example.com".into(),
+            include_tests: false,
+        };
+        let detected = Detected {
+            rust: false,
+            go: false,
+            dart: false,
+            java: true,
+            spring_boot: false,
+            typescript: false,
+            react: false,
+            astro: false,
+            svelte: false,
+            nestjs: false,
+            next: false,
+            vite: false,
+            workspace_packages: vec![],
+            profiles: vec!["java".into()],
+        };
+        let files = vec![
+            ("src/Main.java".into(), "import java.util.Date;".into()),
+            (
+                "src/test/MainTest.java".into(),
+                "import java.util.Date;".into(),
+            ),
+            ("src/Main.ts".into(), "java.util.Date".into()),
+        ];
+        let findings = custom_findings(&files, &[check], &detected);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].status, "WARN");
+    }
+
+    #[test]
+    fn rejects_invalid_custom_ids_and_regexes() {
+        let mut check = empty_custom_check("TEAM-001".into());
+        check.title = "Rule".into();
+        check.matcher = "[".into();
+        check.matcher_type = "regex".into();
+        check.message = "Fix it".into();
+        let error = validate_custom_check(&check).unwrap_err();
+        assert!(error.contains("CUSTOM-"));
+        check.id = "CUSTOM-TEAM-001".into();
+        let error = validate_custom_check(&check).unwrap_err();
+        assert!(error.contains("invalid regex"));
     }
 }

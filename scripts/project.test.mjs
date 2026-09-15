@@ -18,7 +18,7 @@ test("advisor detects Java and Spring Boot and recommends the managed skill", ()
   writeFileSync(join(project, "pom.xml"), "<artifactId>spring-boot-starter-parent</artifactId>\n");
   const result = advise(project);
   assert.deepEqual(result.detected.ecosystems, ["java", "spring-boot"]);
-  assert.equal(result.detected.recommendedSkills[0].id, "java-spring-boot");
+  assert.equal(result.detected.recommendedSkills[0].id, "nice-code");
   rmSync(project, { recursive: true, force: true });
 });
 
@@ -27,7 +27,19 @@ test("advisor detects plain Java without recommending Spring-specific context", 
   writeFileSync(join(project, "Main.java"), "class Main {}\n");
   const result = advise(project);
   assert.deepEqual(result.detected.ecosystems, ["java"]);
-  assert.equal(result.detected.recommendedSkills[0].id, "java-spring-boot");
+  assert.equal(result.detected.recommendedSkills[0].id, "nice-code");
   assert.equal(result.detected.springBoot, false);
+  rmSync(project, { recursive: true, force: true });
+});
+
+test("advisor retains all detected ecosystems for a polyglot project", () => {
+  const project = mkdtempSync(join(tmpdir(), "nice-code-polyglot-"));
+  writeFileSync(join(project, "Cargo.toml"), "[package]\nname = \"demo\"\n");
+  writeFileSync(join(project, "go.mod"), "module example.com/demo\n");
+  writeFileSync(join(project, "tsconfig.json"), "{}\n");
+  writeFileSync(join(project, "Main.java"), "class Main {}\n");
+  const result = advise(project);
+  assert.deepEqual(result.detected.ecosystems, ["rust", "go", "java", "typescript"]);
+  assert.equal(result.detected.recommendedSkills[0].id, "nice-code");
   rmSync(project, { recursive: true, force: true });
 });

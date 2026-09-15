@@ -36,7 +36,7 @@ function detect(projectRoot) {
   const web = ecosystems.some((entry) => ["typescript", "react", "astro", "svelte", "vite"].includes(entry));
   const files = [".nice-code.json", "DESIGN.md", "AGENTS.md", "SKILL.md", ".nice-code/skills.lock.json"];
   const existing = files.filter((file) => has(file));
-  const recommendedSkills = registry.skills.filter((skill) => skill.ecosystems.some((entry) => ecosystems.includes(entry)));
+  const recommendedSkills = registry.skills.filter((skill) => !skill.deprecated && skill.primary && (skill.ecosystems.length === 0 || skill.ecosystems.some((entry) => ecosystems.includes(entry))));
   return { ecosystems, web, java, springBoot, existing, recommendedSkills };
 }
 
@@ -79,7 +79,7 @@ function print(reportData) {
 }
 
 function filesFor(projectRoot, detected) {
-  const profiles = ["default", ...detected.ecosystems.filter((entry) => ["typescript", "react", "astro", "svelte", "vite", "java", "spring-boot"].includes(entry))];
+  const profiles = ["default", ...detected.ecosystems];
   const skills = detected.recommendedSkills.map(({ id, version, source, revision }) => ({ id, version, source, revision }));
   const design = `# Design direction\n\nDocument this project's visual language, typography, spacing, color, component primitives, responsive behavior, and intentional exceptions here.\n\nNice Code can review implementation patterns, but rendered browser feedback is still required for visual quality.\n`;
   const agents = `## Nice Code\n\nUse the project's DESIGN.md for product-specific UI decisions. Run \`nice-code advise --project .\` when adding a new surface and \`nice-code --changed --project .\` before handoff.\n`;

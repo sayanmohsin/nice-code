@@ -17,6 +17,16 @@ Publisher with these values:
 The GitHub environment must use the same `npm-publish` name. No npm token is
 stored in GitHub; the workflow publishes with OIDC provenance.
 
+For a first-time local publish from a terminal, use:
+
+```bash
+npm login
+npm publish --access public
+```
+
+Do not add `--provenance` to a local publish. npm provenance requires a
+supported CI provider and is enabled by the GitHub release workflow.
+
 The release workflow also follows the Arqen setup for Release Please. Configure
 the repository variable `RELEASE_APP_CLIENT_ID` and repository secret
 `RELEASE_APP_PRIVATE_KEY` for the GitHub App used to open release PRs.

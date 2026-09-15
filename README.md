@@ -363,6 +363,14 @@ Read the [pattern index](patterns/index.md) for the complete catalog. Current pa
 
 ## Adding or changing a pattern
 
+The package-owned knowledge index is maintained with `npm run knowledge:check` and
+`npm run knowledge:outdated` in this repository. Consumer projects do not run those commands.
+They can attach `.nice-code/checks.json`, Markdown skills, and advisory resources; see
+[`docs/knowledge.md`](docs/knowledge.md).
+
+For safer custom-rule authoring, use `nice-code rules init`, `nice-code rules validate`, and
+`nice-code rules compile --apply` instead of hand-writing rule JSON.
+
 Every pattern must include:
 
 1. The engineering problem.
@@ -400,8 +408,8 @@ artifacts; only a small trend summary should be committed when needed.
 
 ## npm package and releases
 
-The public npm package is scoped as `@sayanmohsin/nice-code`, while the
-installed command remains `nice-code`:
+The public npm package is `@sayanmohsin/nice-code`, and the installed command
+is still `nice-code`:
 
 ```bash
 npm install --global @sayanmohsin/nice-code
@@ -410,7 +418,7 @@ nice-code --project .
 
 Release Please owns version changes. Merging its release PR builds all five
 platform binaries, creates the GitHub Release with checksums, and publishes the
-scoped npm package through GitHub Actions Trusted Publishing. To retry an
+public scoped npm package through GitHub Actions Trusted Publishing. To retry an
 existing version, use the `publish_version` workflow input described in
 [`docs/ci.md`](docs/ci.md). Before publishing, inspect the exact tarball:
 

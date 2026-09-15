@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "bundleVersion": "0.1.0",
+  "entries": [
+    {"id":"PATTERN-INDEX","title":"Engineering patterns","kind":"pattern-index","status":"adopted","document":"patterns/index.md","scope":["general"],"sources":[]},
+    {"id":"GENERAL-ENGINEERING","title":"General engineering guidance","kind":"guidance","status":"adopted","document":"knowledge/general/engineering.md","scope":["general"],"sources":[]},
+    {"id":"LANG-JAVA","title":"Java guidance","kind":"guidance","status":"adopted","document":"knowledge/languages/java.md","scope":["java"],"sources":["google-java-style"]},
+    {"id":"LANG-TYPESCRIPT","title":"TypeScript and JavaScript guidance","kind":"guidance","status":"adopted","document":"knowledge/languages/typescript.md","scope":["typescript","javascript"],"sources":[]},
+    {"id":"LANG-RUST","title":"Rust guidance","kind":"guidance","status":"adopted","document":"knowledge/languages/rust.md","scope":["rust"],"sources":[]},
+    {"id":"LANG-GO","title":"Go guidance","kind":"guidance","status":"adopted","document":"knowledge/languages/go.md","scope":["go"],"sources":[]},
+    {"id":"LANG-DART","title":"Dart guidance","kind":"guidance","status":"adopted","document":"knowledge/languages/dart.md","scope":["dart"],"sources":[]},
+    {"id":"FRAMEWORK-SPRING-BOOT","title":"Spring Boot guidance","kind":"guidance","status":"adopted","document":"knowledge/frameworks/spring-boot.md","scope":["spring-boot"],"sources":["spring-testing"]},
+    {"id":"FRAMEWORK-REACT","title":"React guidance","kind":"guidance","status":"adopted","document":"knowledge/frameworks/react.md","scope":["react"],"sources":[]},
+    {"id":"JAVA-SPRING-BOOT","title":"Java and Spring Boot patterns","kind":"pattern","status":"adopted","document":"patterns/java-and-spring-boot.md","scope":["java","spring-boot"],"sources":["google-java-style","spring-boot-logging","spring-testing"]},
+    {"id":"JAVA-LOGGING-STANDARDS","title":"Java logging and coding standards","kind":"pattern","status":"adopted","document":"patterns/java-logging-and-coding-standards.md","scope":["java","spring-boot"],"checks":["AP-LOG-003","AP-LOG-004"],"sources":["google-java-style","spring-boot-logging"]},
+    {"id":"JAVA-COMPANY-PRACTICES","title":"Generalized Java company practices","kind":"company-evidence","status":"review","document":"patterns/java-company-practices.md","scope":["java","spring-boot"],"sources":["netflix-java","spotify-java","uber-engineering"]}
+  ]
+}

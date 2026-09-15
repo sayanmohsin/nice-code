@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {"id":"google-java-style","title":"Google Java Style Guide","url":"https://google.github.io/styleguide/javaguide.html","reviewedOn":"2026-09-14","reviewAfter":"2027-03-14"},
+    {"id":"spring-boot-logging","title":"Spring Boot logging guidance","url":"https://docs.spring.io/spring-boot/4.2/reference/features/logging.html","reviewedOn":"2026-09-14","reviewAfter":"2027-03-14"},
+    {"id":"spring-testing","title":"Spring testing guidance","url":"https://spring.io/guides/gs/testing-web/","reviewedOn":"2026-09-14","reviewAfter":"2027-03-14"},
+    {"id":"netflix-java","title":"Netflix Java service example","url":"https://netflixtechblog.com/https-medium-com-netflix-techblog-simone-a-distributed-simulation-service-b2c85131ca1b","reviewedOn":"2026-09-14","reviewAfter":"2027-03-14"},
+    {"id":"spotify-java","title":"Spotify Java engineering guidance","url":"https://engineering.atspotify.com/java-linking","reviewedOn":"2026-09-14","reviewAfter":"2027-03-14"},
+    {"id":"uber-engineering","title":"Uber Engineering","url":"https://eng.uber.com/","reviewedOn":"2026-09-14","reviewAfter":"2027-03-14"}
+  ]
+}

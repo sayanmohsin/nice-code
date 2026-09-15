@@ -23,7 +23,7 @@ Keep `REVIEW` findings visible without blocking automatically. Make a finding bl
 
 Release Please owns version changes. After a release PR is merged, GitHub
 Actions builds the five supported Rust binaries, creates the GitHub Release,
-generates checksums, and publishes the scoped npm package.
+generates checksums, and publishes the public scoped `@sayanmohsin/nice-code` npm package.
 
 The workflow is `.github/workflows/release.yml`. To retry an existing version,
 open **Actions → Release → Run workflow** and enter the full version in

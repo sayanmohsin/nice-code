@@ -61,5 +61,6 @@ It complements compilers, formatters, linters, tests, and tools such as SonarQub
 | Adding it to CI                  | [CI](/ci)                                   |
 | Reviewing scan output            | [Findings and statuses](/findings)          |
 | Improving the patterns           | [Pattern lifecycle](/lifecycle)             |
+| Project rules and knowledge      | [Knowledge](/knowledge)                     |
 
 Use the smallest check that answers the current question. Changed-file checks are the default; full scans, baselines, metrics, and monthly audits are explicit tools for understanding change over time.
