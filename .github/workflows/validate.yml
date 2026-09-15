@@ -64,8 +64,6 @@ jobs:
       - run: npm pack --dry-run
       - run: npm audit --audit-level=high
       - uses: pnpm/action-setup@v6
-        with:
-          version: 10
       - run: pnpm --dir docs install --frozen-lockfile
       - run: pnpm --dir docs format:check
       - run: pnpm --dir docs build
