@@ -39,6 +39,7 @@ jobs:
       - run: node scripts/skills.mjs check
       - run: bun scripts/check-docs.mts
       - run: bun scripts/check-version.mts
+      - run: npm run test:version
       - run: npm pack --dry-run
 
   full:
@@ -74,6 +75,7 @@ jobs:
       - run: node scripts/skills.mjs check
       - run: bun scripts/check-docs.mts
       - run: bun scripts/check-version.mts
+      - run: npm run test:version
       - run: node scripts/nice-code.mjs --all --project . --format agent
       - run: npm pack --dry-run
       - run: npm audit --audit-level=high

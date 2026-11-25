@@ -11,6 +11,11 @@
           "path": "engine/Cargo.toml",
           "jsonpath": "$.package.version"
         },
+        {
+          "type": "toml",
+          "path": "engine/Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value == 'nice-code-engine' || @.name == 'nice-code-engine')].version"
+        },
         "SKILL.md"
       ]
     }

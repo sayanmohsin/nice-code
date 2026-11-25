@@ -78,6 +78,8 @@ Release Please owns version changes. After a release PR is merged, GitHub
 Actions builds the five supported Rust binaries, creates the GitHub Release,
 generates checksums, and publishes the public scoped `@sayanmohsin/nice-code` npm package.
 
+Release Please updates the engine version in both `engine/Cargo.toml` and `engine/Cargo.lock`, alongside the npm and skill versions. `npm run check:version` checks this contract, and `npm run test:version` covers a synchronized bump and a stale lockfile. The lockfile selector accepts Release Please’s wrapped TOML names and plain names, so it updates only the engine package.
+
 The workflow is `.github/workflows/release.yml`. To retry an existing version,
 open **Actions → Release → Run workflow** and enter the full version in
 `publish_version`, for example `0.1.4`. Retries replace existing GitHub assets
