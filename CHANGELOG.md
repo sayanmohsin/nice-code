@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/sayanmohsin/nice-code/compare/v0.3.2...v0.3.3) (2026-11-25)
+
+
+### Bug Fixes
+
+* harden scans and upgrade dependencies ([48413b9](https://github.com/sayanmohsin/nice-code/commit/48413b9c73c88d694388f81fb8b44a56a9d55757))
+* synchronize Cargo lockfile in release PRs ([bfdc59b](https://github.com/sayanmohsin/nice-code/commit/bfdc59b6be15cf02a1a69db9cc87e09e23d3ce73))
+
 ## [0.3.2](https://github.com/sayanmohsin/nice-code/compare/v0.3.1...v0.3.2) (2026-09-15)
 
 
