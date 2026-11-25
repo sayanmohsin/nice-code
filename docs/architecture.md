@@ -4,19 +4,7 @@ Nice Code keeps the review path small and explicit. Rust owns discovery,
 parsing, rules, reports, and exit decisions. Node.js runs the user-facing
 launcher; Bun supports development, testing, and TypeScript utilities.
 
-```mermaid
-flowchart LR
-    Guidance[Sources and patterns] --> Engine[Rust analysis engine]
-    Project[Target project] --> Engine
-    Engine --> Findings[Deterministic findings]
-    Engine --> Native[Native project tools]
-    Native --> Reports[Report and exit decision]
-    Findings --> Reports
-    Launcher[Node-compatible launcher] --> Engine
-    Reports --> Text[Human terminal output]
-    Reports --> Agent[Agent format / JSON]
-    Reports --> Sarif[SARIF for CI]
-```
+![Diagram: sources, the project, and launcher feed the analysis engine; findings and native tools feed reports for terminal, agent, and CI output.](/architecture.svg)
 
 The review path is:
 
