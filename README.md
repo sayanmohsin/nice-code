@@ -1,444 +1,93 @@
 # Nice Code
 
-Source-backed engineering patterns and guardrails for reliable software development.
+**Give your code a second look.**
 
-Nice Code helps humans and AI-assisted developers catch important engineering mistakes that
-formatters, compilers, and linters cannot fully judge:
+Nice Code adds source-backed engineering checks to your terminal, coding agent, and CI. It looks for recurring mistakes and highlights questions that need human judgment, with guidance you can trace back to public sources.
 
-- Logging without useful context or with sensitive data
-- Sequential async work and unsafe concurrency
-- Weak error boundaries and swallowed failures
-- Incorrect state ownership and data flow
-- Unsafe persistence and migration behavior
-- Tests that pass without protecting real behavior
-- Unmeasured performance claims
-- Security and privacy mistakes
-- API, reliability, and operational design gaps
+[Documentation](https://sayanmohsin.github.io/nice-code/) · [Getting started](https://sayanmohsin.github.io/nice-code/getting-started) · [Pattern catalog](https://sayanmohsin.github.io/nice-code/patterns) · [CI guide](https://sayanmohsin.github.io/nice-code/ci) · [Releases](https://github.com/sayanmohsin/nice-code/releases/latest)
 
-Nice Code is deliberately not a replacement for language tooling. Its Rust
-engine is the only analysis engine and adds a conservative, evidence-oriented
-review on top of Clippy, Biome, TypeScript, Dart Analyzer, `gofmt`, Maven/Gradle, framework
-checks, and project-specific tests. Node.js provides the user-facing launcher;
-Bun is used for development tooling around that engine.
+## Get started
 
-Read the task-oriented [documentation](https://sayanmohsin.github.io/nice-code/).
-
-## Download
-
-### npm launcher
-
-The simplest installation uses Node.js 20 or newer. Bun, Cargo, and Rust are
-not required on the user's machine:
+Install the CLI with Node.js 20 or newer, then run it in your project:
 
 ```bash
 npm install --global @sayanmohsin/nice-code
-nice-code --help
 nice-code --changed --project .
-
-# Discover project setup and available agent skills
-nice-code advise --project .
-nice-code skills list
 ```
 
-For a one-off run without a global install:
+For a one-off run:
 
 ```bash
 npx --yes @sayanmohsin/nice-code --changed --project .
 ```
 
-The launcher downloads and verifies the matching Rust engine from the [latest
-GitHub Release](https://github.com/sayanmohsin/nice-code/releases/latest), then
-caches it locally.
+The launcher downloads and verifies the matching Rust engine and caches it locally. You don't need Rust, Cargo, or Bun to use the npm package. Prebuilt binaries for macOS, Linux, and Windows are also available in the [latest release](https://github.com/sayanmohsin/nice-code/releases/latest), alongside checksums.
 
-### Direct Rust binaries
+## What it checks
 
-You can also download a platform binary from the [latest GitHub
-Release](https://github.com/sayanmohsin/nice-code/releases/latest). Available
-targets are macOS ARM64 and x64, Linux ARM64 and x64, and Windows x64. Verify
-the download with the published `checksums.txt` file.
+Nice Code adds a focused review layer to the tools you already use. Its patterns cover logging and sensitive data, async and concurrency, security, error handling, APIs, persistence, testing, and more. It detects supported languages and frameworks including Rust, Go, Dart, Java, Spring Boot, TypeScript, React, Astro, and Svelte.
 
-## How it works
+Findings include a location and an explanation. High-confidence critical issues can block a changed scan; `WARN` and `REVIEW` findings provide context for your decision. Full scans are advisory. See [findings and statuses](https://sayanmohsin.github.io/nice-code/findings) and the [pattern catalog](patterns/index.md) for details.
 
-```mermaid
-flowchart LR
-    Guidance[Sources and patterns] --> Engine[Rust analysis engine]
-    Project[Target project] --> Engine
-    Launcher[Node-compatible launcher] --> Engine
-    Engine --> Findings[Deterministic findings]
-    Engine --> Native[Native project tools]
-    Native --> Reports[Report and exit decision]
-    Findings --> Reports
-    Reports --> Text[Human terminal output]
-    Reports --> Agent[Agent format / JSON]
-    Reports --> Sarif[SARIF for CI]
-```
-
-The Rust engine owns discovery, parsing, rules, reports, and exit decisions.
-The Node-compatible launcher downloads and runs the matching engine binary;
-users do not need Bun, Cargo, or Rust installed.
-
-Every pattern is classified as:
-
-- **Automated** — a tool can detect it reliably.
-- **Agent review** — context and engineering judgment are required.
-- **Human decision** — product, risk, or operational tradeoffs are involved.
-
-Uncertain results are reported as `REVIEW`; the checker does not claim that a text search proves an
-architectural or performance property.
-
-## Quick start
-
-Nice Code uses a Rust engine for analysis and a Node-compatible launcher for
-checkout and package usage. Bun remains the preferred development runtime for
-TypeScript utilities. GitHub Releases provide the prebuilt engines, and the
-public npm package provides the matching launcher. End users need Node.js only.
-
-From this repository:
+## Choose your workflow
 
 ```bash
-npm test
-npm run check:docs
+# Review changed and untracked files (the default)
+nice-code --changed --project .
 
-# Engine validation
-bun run test:bun
-bun run engine:check
-```
+# Scan the whole project deliberately
+nice-code --all --project .
 
-Check another project for only changed and untracked source files:
+# Produce compact output for a coding agent
+nice-code --changed --agent --include-review --project .
 
-```bash
-nice-code \
-  --project /path/to/project \
-  --changed
-```
-
-Run a deliberate full scan:
-
-```bash
-nice-code \
-  --project /path/to/project \
-  --all
-```
-
-The checker detects Rust, Go, Dart, Java, Spring Boot, TypeScript, React, Astro, and Svelte projects from their
-standard manifest files. It scans supported source files and does not modify the target project.
-
-See the complete built-in reference with:
-
-```bash
-nice-code --help
-nice-code --version
-```
-
-## Checker modes
-
-| Command                  | Use                                                     |
-| ------------------------ | ------------------------------------------------------- |
-| `--changed`              | Fast default for local development and commits          |
-| `--all`                  | Explicit deeper scan of supported source files          |
-| `--ci`                   | Compare committed CI changes and run native tools      |
-| `--base REVISION`        | Override CI detection with an exact comparison commit  |
-| `--json`                 | Machine-readable report for CI artifacts and metrics    |
-| `--format agent`         | Compact, line-oriented findings for coding agents       |
-| `--agent`                | Alias for `--format agent`                              |
-| `--verbose`              | Show all human-readable findings in a full scan         |
-| `--include-review`       | Include `REVIEW` findings in agent output               |
-| `--status STATUS,...`    | Filter output by `FAIL`, `WARN`, `REVIEW`, or `PASS`    |
-| `--max-findings N`       | Limit displayed or explicitly filtered findings         |
-| `--new-only`             | Show only findings not present in the supplied baseline |
-| `--color` / `--no-color` | Force or disable colors in human-readable output        |
-| `--explain CHECK_ID`     | Show the purpose, severity, and source for a check      |
-
-Examples:
-
-```bash
-# Fast local check
-nice-code --project . --changed
-
-# Explain one finding
+# Explain a check and its source
 nice-code --explain AP-LOG-001
-
-# CI-oriented check
-nice-code --project /path/to/project --ci
-
-# Compact output for an agent loop
-nice-code --project /path/to/project --changed --format agent
-
-# Equivalent agent shorthand
-nice-code --project /path/to/project --changed --agent
-
-# Keep agent context small and focused
-nice-code --project /path/to/project --all --agent --status FAIL,WARN --max-findings 20
-
-# Save an ephemeral report and summarize it
-nice-code --project /path/to/project --all --json > /tmp/nice-code-report.json
-bun scripts/metrics.mts /tmp/nice-code-report.json
 ```
 
-## Node, Bun, and Rust support
+The checker does not modify your project during a scan. See the [CLI reference](https://sayanmohsin.github.io/nice-code/cli) for output formats, filters, and options.
 
-Node.js runs the user-facing launcher, so normal users do not need Bun or Rust.
-Bun remains the preferred local runtime for fast TypeScript script and test execution:
+## Use in CI
 
-```bash
-bun scripts/test-engine.ts
-nice-code --project . --all
-```
-
-The Rust engine requires Rust 1.90 or newer to build and can also be run directly during development:
-
-```bash
-cargo test --manifest-path engine/Cargo.toml
-cargo run --manifest-path engine/Cargo.toml -- --project . --all
-```
-
-The Rust engine is the only checker. Bun is used for the launcher, tests, benchmarks, and
-surrounding development tooling.
-
-Measure before making performance claims:
-
-```bash
-npm run benchmark
-```
-
-The benchmark compares the fixture scan under available runtimes. Filesystem work, Git, and
-external native tools may dominate the total time, so startup results are not a guarantee of
-end-to-end improvement.
-
-`--changed` reads the target Git diff against `HEAD` and includes untracked files. A clean project
-therefore produces a report with zero scanned files. `--all` is opt-in so routine work does not
-scan an entire repository unnecessarily.
-
-In GitHub Actions, `--ci` automatically compares PR or branch-push commits, including on a clean
-checkout. Configure `actions/checkout` with `fetch-depth: 0`. Use `--base <commit>` to override the
-comparison or to run on another CI service. Missing history or event context is a setup error
-(exit 2), with recovery instructions; it never silently becomes a clean or full scan. See
-[`docs/ci.md`](docs/ci.md) for the comparison rules and scheduled scans.
-
-Initialize an explicit project configuration without overwriting an existing one:
-
-```bash
-bun scripts/init.mts --project /path/to/project
-```
-
-The generated `.nice-code.json` supports `profiles`, path `ignore` patterns, per-check `severity`
-overrides, and precise `exceptions` with a required reason. See
-[`examples/project-config.json`](examples/project-config.json). Exceptions are intentionally
-specific; they do not disable a whole category.
-
-For a new repository, use the project advisor before choosing rules manually:
-
-```bash
-nice-code advise --project .
-nice-code init --project .
-nice-code init --project . --apply
-```
-
-The initializer detects languages and frameworks, previews missing
-`.nice-code.json`, `DESIGN.md`, `AGENTS.md`, and a pinned
-`.nice-code/skills.lock.json`, and never overwrites existing guidance. Review
-managed skills with `nice-code skills list`, `nice-code skills outdated`, and
-`nice-code skills update --apply`.
-
-For GitHub code scanning or other SARIF consumers:
-
-```bash
-nice-code --project . --ci --format sarif > nice-code.sarif
-```
-
-Use a baseline generated by `--write-baseline` when adopting Nice Code gradually.
-`--new-only` filters findings already present in that baseline; it does not change
-the underlying scan or native-tool status. See [`docs/baselines.md`](docs/baselines.md).
-
-Create a baseline intentionally:
-
-```bash
-nice-code --project . --all --format json --write-baseline .nice-code-baseline.json
-```
-
-JSON reports expose `schemaVersion`, `checkerVersion`, `customFindings`, `nativeTools`, `activeProfiles`,
-stable `exit` information, and a `fileClass` for each finding. Findings are sorted by file, line, and
-check ID so consumers can compare reports consistently. `--format agent` omits JSON decoration and
-prints one actionable finding per line, which is suitable for an agent to parse without loading the
-full pattern library. Human-readable output uses colors and symbols when attached to a terminal;
-colors are disabled automatically for CI, redirected output, and `NO_COLOR`. Use `--color` or
-`--no-color` to override that behavior.
-
-`--new-only` filters the displayed findings; JSON does not currently add a separate
-baseline summary. Full scans with findings are reported as `ADVISORY`; only
-changed-scan blockers produce `BLOCKED`.
-Native tools can be `PASS`, `FAIL`, or `SKIPPED`; a missing optional tool is not a Nice Code
-finding.
-
-## Reading results
-
-```text
-FAIL   AP-SEC-001  src/auth.ts:12  Possible hardcoded credential
-REVIEW AP-ASYNC-001 src/data.ts:22  Multiple awaits may be independent
-REVIEW AP-PERF-001 src/list.ts:8   Review collection allocation cost
-```
-
-- `FAIL` means a high-confidence critical finding or failed native CI tool.
-- `WARN` means a potentially important finding that should be considered.
-- `REVIEW` means the checker found a pattern requiring context or human judgment.
-- `PASS` is reserved for checks that explicitly prove a condition.
-- `N/A` is used in documentation and review discussions when a pattern does not apply.
-
-CI blocks only critical custom findings and failed native tools. Warnings and review findings are
-reported without blocking progress. Do not turn the output into one quality score.
-
-## Native tooling
-
-In `--ci` mode, Nice Code uses tools already available in the target project:
-
-- Rust: `cargo fmt --all --check`
-- TypeScript: local `tsc --noEmit`
-- Biome: local `biome check .`
-- Go: `go vet ./...`
-- Dart: `dart analyze`
-- Java: Maven or Gradle tests when the project declares `pom.xml`, `build.gradle`, or a wrapper
-
-Nice Code does not install dependencies or download tools during a check. If a tool or manifest is
-missing, it is skipped and the result remains explicit in JSON output.
-
-## Commit and CI integration
-
-Add a project script that points to the checked-out Nice Code repository:
-
-```json
-{
-  "scripts": {
-    "nice-code:check": "nice-code --project . --changed"
-  }
-}
-```
-
-For CI, fetch the comparison history and use the checker after installing the project’s own dependencies:
+On GitHub Actions, Nice Code detects the comparison base for pull requests and branch pushes. Fetch the history it needs before running the check:
 
 ```yaml
 - uses: actions/checkout@v7
   with:
     fetch-depth: 0
-- name: Run Nice Code
+- name: Install Nice Code
+  run: npm install --global @sayanmohsin/nice-code
+- name: Review changes
   run: nice-code --project . --ci
 ```
 
-A commit hook may run `--changed` for fast feedback. Full scans should be explicit or scheduled so
-they do not add unnecessary work to every edit.
+The runner needs Node.js 20 or newer. For another CI service, or to override automatic detection, pass `--base <commit>`. If the comparison cannot be determined reliably, Nice Code stops with a setup error. CI mode also runs available project-native tools; see the [CI guide](https://sayanmohsin.github.io/nice-code/ci) for comparison rules, SARIF output, and scheduled scans.
 
-## Agent skill integration
+## Configure your project
 
-The root [`SKILL.md`](SKILL.md) is an Agent Skills-compatible router. It tells an agent which
-pattern to read for logging, persistence, performance, React, security, testing, or other work.
-The detailed patterns are not loaded for unrelated tasks.
-
-To use it globally, install or copy this repository as a skill named `nice-code` in the agent’s
-skills directory. For Codex, the local destination is typically:
-
-```text
-~/.codex/skills/nice-code/
-```
-
-The skill is supplemental. Project-local `AGENTS.md` files still define repository architecture,
-commands, boundaries, and exceptions.
-
-The CLI and skill are separate on purpose: the CLI produces repeatable evidence, while the skill
-helps an agent reason about context before and during a change. A project can use either one or
-both.
-
-Nice Code also ships a curated, versioned skill registry for agent guidance.
-Generic web-interface and design-system guidance is managed in Nice Code;
-product-specific visual identity belongs in each project's `DESIGN.md`.
-
-## Patterns
-
-Read the [pattern index](patterns/index.md) for the complete catalog. Current patterns include:
-
-- Logging and observability
-- Conditions and control flow
-- Async and concurrency
-- Error handling
-- API boundaries
-- State and data flow
-- Persistence and data integrity
-- Testing and verification
-- Security and secrets
-- Performance measurement
-- Reliability and operations
-- React and UI behavior
-- Code review and AI-generated changes
-- Java and Spring Boot architecture
-- Java logging and coding standards
-- Java practices from public engineering organizations
-
-## Adding or changing a pattern
-
-The package-owned knowledge index is maintained with `npm run knowledge:check` and
-`npm run knowledge:outdated` in this repository. Consumer projects do not run those commands.
-They can attach `.nice-code/checks.json`, Markdown skills, and advisory resources; see
-[`docs/knowledge.md`](docs/knowledge.md).
-
-For safer custom-rule authoring, use `nice-code rules init`, `nice-code rules validate`, and
-`nice-code rules compile --apply` instead of hand-writing rule JSON.
-
-Every pattern must include:
-
-1. The engineering problem.
-2. The recommended pattern.
-3. An anti-pattern or failure example.
-4. A practical example.
-5. Automated, agent-review, and human-decision enforcement notes.
-6. Exceptions and tradeoffs.
-7. An official public source.
-
-Do not duplicate rules already handled by a compiler, formatter, or linter unless the pattern
-protects a higher-level behavior. Add positive, negative, and ambiguous fixtures for new checks.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the lifecycle from proposed to adopted, revised,
-deprecated, or rejected.
-
-Review the source registry and run the monthly process in
-[`docs/monthly-audit.md`](docs/monthly-audit.md) before adopting changes. This keeps the guidance
-easy to improve without silently changing it or copying an entire external guide.
-
-## Sources
-
-The source registry is in [`sources/index.md`](sources/index.md). It currently references public
-guidance from Microsoft, Google, React, Vercel, Airbnb, Dart, Go, Java, Spring, Netflix, Spotify,
-Uber, LinkedIn, Salesforce, Meta, AWS, and MDN.
-
-Nice Code summarizes and attributes external guidance; it does not reproduce complete third-party
-documents. Sources are reviewed and dated so upstream changes can be revisited deliberately.
-
-## Monthly audit
-
-Use [`docs/monthly-audit.md`](docs/monthly-audit.md) once a month to review sources, run deliberate
-full scans, compare findings with native tools, measure false positives, and decide whether a
-pattern should be adopted, revised, deprecated, or rejected. Detailed reports stay in local or CI
-artifacts; only a small trend summary should be committed when needed.
-
-## npm package and releases
-
-The public npm package is `@sayanmohsin/nice-code`, and the installed command
-is still `nice-code`:
+Use the advisor to discover relevant guidance and preview project setup:
 
 ```bash
-npm install --global @sayanmohsin/nice-code
-nice-code --project .
+nice-code advise --project .
+nice-code init --project .
+nice-code init --project . --apply
+nice-code skills list
 ```
 
-Release Please owns version changes. Merging its release PR builds all five
-platform binaries, creates the GitHub Release with checksums, and publishes the
-public scoped npm package through GitHub Actions Trusted Publishing. To retry an
-existing version, use the `publish_version` workflow input described in
-[`docs/ci.md`](docs/ci.md). Before publishing, inspect the exact tarball:
+The initializer does not overwrite existing guidance. A `.nice-code.json` file can set profiles, ignored paths, severity overrides, and narrow exceptions. Baselines help teams adopt checks gradually. See [configuration](https://sayanmohsin.github.io/nice-code/configuration), [baselines](https://sayanmohsin.github.io/nice-code/baselines), and [agent integration](https://sayanmohsin.github.io/nice-code/agent-integration).
+
+## Contributing
+
+The Rust engine owns discovery, analysis, and reporting. Node.js runs the launcher; Bun supports development scripts. Building the engine requires Rust 1.90 or newer. From a checkout:
 
 ```bash
-npm run pack:check
+npm run check:docs
+npm test
+node scripts/nice-code.mjs --all --project . --format json
 ```
 
-The Node-compatible launcher provides the `nice-code` command without requiring
-Bun or Rust on the user's machine.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and pattern contribution guidance. Patterns document their problem, recommendation, examples, enforcement, exceptions, and public sources; the [source registry](sources/index.md) records their references.
 
 ## License
 
-Nice Code is released under the MIT License.
+[MIT](LICENSE)
