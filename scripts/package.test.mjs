@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { tmpdir } from "node:os";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
-const engine = join(root, "engine", "target", "debug", "nice-code-engine");
+const engine = join(root, "engine", "target", "debug", `nice-code-engine${process.platform === "win32" ? ".exe" : ""}`);
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -32,7 +32,7 @@ test("packed scoped npm package works in a consumer project", () => {
     run("npm", ["pack", "--json", "--pack-destination", packageDir], { env: npmEnv }),
   )[0];
   assert.equal(packed.name, "@sayanmohsin/nice-code");
-  assert.equal(packed.version, "0.2.1");
+  assert.equal(packed.version, JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version);
 
   run("npm", [
     "install",

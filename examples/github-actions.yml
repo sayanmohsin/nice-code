@@ -14,18 +14,22 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
       - name: Install the project tools
         run: true
       - name: Run Nice Code
+        if: github.event_name != 'schedule'
         run: node /path/to/nice-code/scripts/nice-code.mjs --project . --ci --format sarif > nice-code.sarif
+      - name: Run scheduled full audit
+        if: github.event_name == 'schedule'
+        run: node /path/to/nice-code/scripts/nice-code.mjs --project . --all --ci --format sarif > nice-code.sarif
       - name: Upload Nice Code results
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: nice-code.sarif

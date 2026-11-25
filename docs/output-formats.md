@@ -8,6 +8,6 @@ Use `--verbose` for full review findings.
 files, findings, blocked state, and actionable findings. It defaults to `FAIL`
 and `WARN`, and supports `--include-review` and `--max-findings`.
 
-**JSON** is the complete machine-readable report by default. It includes schema metadata, deterministic findings, detected profiles, native-tool status, scan summary, and exit decision.
+**JSON** is the complete machine-readable report by default. It includes schema metadata, deterministic findings, detected profiles, native-tool status, scan summary, and exit decision. Its `comparison` object records the selection source and resolved base/target commits, making a valid zero-file CI scan distinguishable from a setup error.
 
 **SARIF** is intended for CI artifact and code-scanning integrations. Produce it with direct CLI invocation so package-manager banners do not corrupt the document.

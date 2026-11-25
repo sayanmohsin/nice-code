@@ -1,5 +1,8 @@
+mod discovery;
+
 use clap::{Parser, ValueEnum};
-use nice_code_engine::SyntaxParser;
+use discovery::Comparison;
+use nice_code_engine::{SyntaxParser, is_test_path};
 use rayon::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -67,7 +70,7 @@ enum Format {
     version,
     about = "Fast, source-backed engineering guardrails",
     long_about = "Review JavaScript, TypeScript, Rust, Go, Dart, and Java projects with a fast Rust engine.\n\nUse --changed for a focused local review, --all for a deliberate full scan, and --format agent or --format json for automation.",
-    after_help = "Examples:\n  nice-code --changed --project .\n  nice-code --all --project .\n  nice-code --changed --format agent --project .\n  nice-code --changed --ci --format sarif --project . > nice-code.sarif\n  nice-code --explain AP-LOG-001\n\nExit status is non-zero only when the report's exit decision is blocked."
+    after_help = "Examples:\n  nice-code --changed --project .\n  nice-code --all --project .\n  nice-code --changed --format agent --project .\n  nice-code --changed --ci --format sarif --project . > nice-code.sarif\n  nice-code --explain AP-LOG-001\n\nExit status: 0 for success or advisory findings, 1 for blocked changes, 2 for setup errors."
 )]
 struct Args {
     #[arg(
@@ -87,9 +90,16 @@ struct Args {
     all: bool,
     #[arg(
         long,
-        help = "Run available native project tools and include their status"
+        help = "Compare committed GitHub CI changes and run available native project tools"
     )]
     ci: bool,
+    #[arg(
+        long,
+        conflicts_with = "all",
+        value_name = "REVISION",
+        help = "Compare this exact commit with HEAD; overrides automatic CI base detection"
+    )]
+    base: Option<String>,
     #[arg(long, value_enum, default_value_t = Format::Text, help = "Output format: text, json, sarif, or agent")]
     format: Format,
     #[arg(long, conflicts_with = "format", help = "Shortcut for --format json")]
@@ -196,7 +206,7 @@ struct CustomCheck {
     applies_to: Vec<String>,
     #[serde(default)]
     source: String,
-    #[serde(default)]
+    #[serde(default, alias = "includeTests")]
     include_tests: bool,
 }
 
@@ -241,6 +251,7 @@ struct Report {
     checker_version: String,
     project: String,
     mode: String,
+    comparison: Comparison,
     config: Option<String>,
     #[serde(rename = "activeProfiles")]
     active_profiles: Vec<String>,
@@ -302,7 +313,11 @@ fn main() {
         print_explanation(check_id, &args.format);
         return;
     }
-    let project = fs::canonicalize(&args.project).unwrap_or(args.project.clone());
+    let project = fs::canonicalize(&args.project)
+        .unwrap_or_else(|error| setup_failure(&format!("cannot open project: {error}")));
+    if !project.is_dir() {
+        setup_failure("project must be a directory");
+    }
     let mode = if args.all { "all" } else { "changed" };
     let discovery_started = Instant::now();
     let config = load_config(&project);
@@ -314,7 +329,8 @@ fn main() {
         }
     };
     let builtin_checks = load_builtin_checks();
-    let files = discover(&project, mode, &config);
+    let (files, comparison) = discover(&project, mode, &config, args.ci, args.base.as_deref())
+        .unwrap_or_else(|error| setup_failure(&error));
     let discovery_ms = discovery_started.elapsed().as_secs_f64() * 1000.0;
     let analysis_started = Instant::now();
     let caching = args.cache && !args.no_cache;
@@ -359,16 +375,16 @@ fn main() {
     if caching {
         save_cache(&project, &cache);
     }
-    findings.sort_by(|a, b| {
-        a.file
-            .cmp(&b.file)
-            .then(a.line.cmp(&b.line))
-            .then(a.id.cmp(&b.id))
-    });
-    let mut findings = apply_config(findings, &config);
     let detected = detect(&project);
-    findings.extend(custom_findings(&files, &builtin_checks, &detected));
-    findings.extend(custom_findings(&files, &custom_checks, &detected));
+    let active_profiles = if config.profiles.is_empty() {
+        detected.profiles.clone()
+    } else {
+        config.profiles.clone()
+    };
+    let mut checks = builtin_checks;
+    checks.extend(custom_checks);
+    findings.extend(custom_findings(&files, &checks, &active_profiles));
+    let mut findings = apply_config(findings, &config);
     findings.sort_by(|a, b| {
         a.file
             .cmp(&b.file)
@@ -403,11 +419,11 @@ fn main() {
         reasons.push("native tool failure".to_string());
     }
     let mut displayed_findings = findings;
-    if args.new_only {
-        if let Some(path) = &args.baseline {
-            let baseline = load_baseline(path);
-            displayed_findings.retain(|finding| !baseline.contains(&finding_key(finding)));
-        }
+    if args.new_only
+        && let Some(path) = &args.baseline
+    {
+        let baseline = load_baseline(path);
+        displayed_findings.retain(|finding| !baseline.contains(&finding_key(finding)));
     }
     if let Some(statuses) = &args.status {
         displayed_findings.retain(|finding| {
@@ -427,16 +443,13 @@ fn main() {
         checker_version: env!("CARGO_PKG_VERSION").to_string(),
         project: project.display().to_string(),
         mode: mode.to_string(),
+        comparison,
         config: if project.join(".nice-code.json").exists() {
             Some(".nice-code.json".to_string())
         } else {
             None
         },
-        active_profiles: if config.profiles.is_empty() {
-            detected.profiles.clone()
-        } else {
-            config.profiles.clone()
-        },
+        active_profiles,
         detected,
         files_scanned: files.iter().map(|(p, _)| p.clone()).collect(),
         project_resources: project_resources(&project),
@@ -466,6 +479,11 @@ fn main() {
     if report.exit.blocked {
         std::process::exit(1);
     }
+}
+
+fn setup_failure(message: &str) -> ! {
+    eprintln!("Nice Code: {message}");
+    std::process::exit(2);
 }
 
 fn load_config(project: &Path) -> ProjectConfig {
@@ -694,11 +712,16 @@ fn parse_list(value: &str) -> Vec<String> {
 fn custom_findings(
     files: &[(String, String)],
     checks: &[CustomCheck],
-    detected: &Detected,
+    profiles: &[String],
 ) -> Vec<Finding> {
+    if checks.is_empty() {
+        return Vec::new();
+    }
     files
         .par_iter()
-        .flat_map(|(path, content)| {
+        .map_init(SyntaxParser::new, |parser, (path, content)| {
+            let syntax = parser.inspect(path, content);
+            let production = syntax.production_source(content);
             checks
                 .iter()
                 .filter_map(|check| {
@@ -715,8 +738,7 @@ fn custom_findings(
                     }
                     if !check.applies_to.is_empty()
                         && !check.applies_to.iter().any(|profile| {
-                            detected
-                                .profiles
+                            profiles
                                 .iter()
                                 .any(|active| active.eq_ignore_ascii_case(profile))
                         })
@@ -724,7 +746,7 @@ fn custom_findings(
                         return None;
                     }
                     if !check.include_tests
-                        && (is_test_file(path, content) || is_non_production_review_context(path))
+                        && (is_test_path(path) || is_non_production_review_context(path))
                     {
                         return None;
                     }
@@ -733,28 +755,51 @@ fn custom_findings(
                         .eq_ignore_ascii_case("regex")
                         .then(|| Regex::new(&check.matcher).ok())
                         .flatten();
-                    content.lines().enumerate().find_map(|(index, line)| {
-                        let matched = regex.as_ref().map_or_else(
-                            || line.contains(&check.matcher),
-                            |pattern| pattern.is_match(line),
-                        );
-                        matched.then(|| {
-                            finding(
-                                &check.id,
-                                &check.title,
-                                &check.category,
-                                &check.severity,
-                                normalized_custom_status(check),
-                                path,
-                                index + 1,
-                                &check.message,
-                                &check.source,
-                            )
+                    let source = if check.include_tests {
+                        content.as_str()
+                    } else {
+                        production.as_str()
+                    };
+                    let mut offset = 0;
+                    source
+                        .split_inclusive('\n')
+                        .enumerate()
+                        .find_map(|(index, raw)| {
+                            let line = raw.trim_end_matches(['\n', '\r']);
+                            let start = offset;
+                            offset += raw.len();
+                            let matched = regex.as_ref().map_or_else(
+                                || {
+                                    line.find(&check.matcher)
+                                        .map(|start| start..start + check.matcher.len())
+                                },
+                                |pattern| pattern.find(line).map(|matched| matched.range()),
+                            );
+                            matched.map(|matched| {
+                                let mut result = finding(
+                                    &check.id,
+                                    &check.title,
+                                    &check.category,
+                                    &check.severity,
+                                    normalized_custom_status(check),
+                                    path,
+                                    index + 1,
+                                    &check.message,
+                                    &check.source,
+                                );
+                                if syntax.test_ranges.iter().any(|range| {
+                                    range.start <= start + matched.start
+                                        && start + matched.end <= range.end
+                                }) {
+                                    result.file_class = "test".into();
+                                }
+                                result
+                            })
                         })
-                    })
                 })
                 .collect::<Vec<_>>()
         })
+        .flatten()
         .collect()
 }
 
@@ -771,23 +816,28 @@ fn normalized_custom_status(check: &CustomCheck) -> &str {
     }
 }
 
-fn discover(project: &Path, mode: &str, config: &ProjectConfig) -> Vec<(String, String)> {
-    let paths = if mode == "changed" {
-        changed_files(project)
+type Discovery = (Vec<(String, String)>, Comparison);
+
+fn discover(
+    project: &Path,
+    mode: &str,
+    config: &ProjectConfig,
+    ci: bool,
+    base: Option<&str>,
+) -> Result<Discovery, String> {
+    let (paths, comparison) = if mode == "changed" {
+        match discovery::changed_paths(project, ci, base)? {
+            Some((paths, comparison)) => (
+                paths
+                    .iter()
+                    .filter_map(|path| relative_source(project, path))
+                    .collect::<Vec<_>>(),
+                comparison,
+            ),
+            None => (all_files(project), Comparison::filesystem()),
+        }
     } else {
-        WalkDir::new(project)
-            .into_iter()
-            .filter_entry(|entry| {
-                entry.file_type().is_file()
-                    || !entry
-                        .file_name()
-                        .to_str()
-                        .is_some_and(|name| IGNORED.contains(&name))
-            })
-            .filter_map(Result::ok)
-            .filter(|e| e.file_type().is_file())
-            .filter_map(|e| relative_source(project, e.path()))
-            .collect()
+        (all_files(project), Comparison::filesystem())
     };
     let mut output = paths
         .par_iter()
@@ -797,14 +847,14 @@ fn discover(project: &Path, mode: &str, config: &ProjectConfig) -> Vec<(String, 
                 .iter()
                 .any(|pattern| path_matches(pattern, path))
         })
-        .filter_map(|path| {
+        .map(|path| {
             fs::read_to_string(project.join(path))
-                .ok()
                 .map(|content| (path.clone(), content))
+                .map_err(|error| format!("cannot read {path}: {error}"))
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, _>>()?;
     output.sort_by(|a, b| a.0.cmp(&b.0));
-    output
+    Ok((output, comparison))
 }
 
 fn apply_config(mut findings: Vec<Finding>, config: &ProjectConfig) -> Vec<Finding> {
@@ -925,10 +975,9 @@ fn config_hash(project: &Path) -> u64 {
         for entry in WalkDir::new(directory).into_iter().filter_map(Result::ok) {
             if entry.file_type().is_file()
                 && entry.path().extension().is_some_and(|ext| ext == "md")
+                && let Ok(bytes) = fs::read(entry.path())
             {
-                if let Ok(bytes) = fs::read(entry.path()) {
-                    inputs.extend(bytes);
-                }
+                inputs.extend(bytes);
             }
         }
     }
@@ -936,7 +985,7 @@ fn config_hash(project: &Path) -> u64 {
 }
 
 fn file_cache_key(path: &str, content: &str, config: u64) -> u64 {
-    hash_value(&(path, content, config, env!("CARGO_PKG_VERSION"), "rules-1"))
+    hash_value(&(path, content, config, env!("CARGO_PKG_VERSION"), "rules-2"))
 }
 
 fn finding_key(finding: &Finding) -> String {
@@ -967,7 +1016,8 @@ fn hash_value<T: Hash>(value: &T) -> u64 {
 }
 
 fn relative_source(project: &Path, path: &Path) -> Option<String> {
-    if path
+    let relative = path.strip_prefix(project).ok()?;
+    if relative
         .components()
         .any(|c| IGNORED.iter().any(|name| c.as_os_str() == *name))
     {
@@ -977,55 +1027,7 @@ fn relative_source(project: &Path, path: &Path) -> Option<String> {
     if !EXTENSIONS.contains(&extension) {
         return None;
     }
-    Some(
-        path.strip_prefix(project)
-            .ok()?
-            .to_string_lossy()
-            .replace('\\', "/"),
-    )
-}
-
-fn changed_files(project: &Path) -> Vec<String> {
-    let output = Command::new("git")
-        .args([
-            "-C",
-            &project.to_string_lossy(),
-            "status",
-            "--porcelain=v1",
-            "-z",
-        ])
-        .output();
-    let Ok(output) = output else {
-        return all_files(project);
-    };
-    if !output.status.success() {
-        return all_files(project);
-    }
-    let mut seen = HashSet::new();
-    let mut paths = Vec::new();
-    let records = output.stdout.split(|byte| *byte == 0).collect::<Vec<_>>();
-    let mut index = 0;
-    while index < records.len() {
-        let record = records[index];
-        index += 1;
-        if record.len() < 4 {
-            continue;
-        }
-        let status = &record[..2];
-        let mut path = &record[3..];
-        if status.contains(&b'R') || status.contains(&b'C') {
-            if let Some(new_path) = records.get(index).filter(|path| !path.is_empty()) {
-                path = new_path;
-                index += 1;
-            }
-        }
-        let path = String::from_utf8_lossy(path).replace('\\', "/");
-        if seen.insert(path.clone()) && relative_source(project, &project.join(&path)).is_some() {
-            paths.push(path);
-        }
-    }
-    paths.sort();
-    paths
+    Some(relative.to_string_lossy().replace('\\', "/"))
 }
 
 fn all_files(project: &Path) -> Vec<String> {
@@ -1053,12 +1055,14 @@ struct FileContext<'a> {
 }
 
 fn analyze_with_parser(path: &str, content: &str, parser: &mut SyntaxParser) -> Vec<Finding> {
+    let syntax = parser.inspect(path, content);
+    let production = syntax.production_source(content);
     let context = FileContext {
         path,
-        content,
-        lowercase: content.to_ascii_lowercase(),
-        is_test: is_test_file(path, content),
-        has_parse_errors: parser.parse_has_errors(path, content),
+        content: &production,
+        lowercase: production.to_ascii_lowercase(),
+        is_test: is_test_path(path),
+        has_parse_errors: syntax.has_errors,
     };
     analyze_context(&context)
 }
@@ -1112,10 +1116,11 @@ fn analyze_context(context: &FileContext<'_>) -> Vec<Finding> {
             findings.push(finding("AP-SEC-001", "Possible hardcoded secret", "security", "critical", "FAIL", path, index + 1, "Possible hardcoded credential; use an approved secret boundary or an unmistakable fixture value.", "https://docs.aws.amazon.com/wellarchitected/latest/framework/security.html"));
         }
     }
-    if is_js(path) && !is_non_production_review_context(path) {
-        if let Some(line) = nearby_sequential_await_line(content) {
-            findings.push(finding("AP-ASYNC-001", "Likely sequential independent awaits", "async", "warning", "REVIEW", path, line, "Multiple awaits may be independent; verify dependency order and consider bounded parallelism.", "https://vercel.com/blog/introducing-react-best-practices"));
-        }
+    if is_js(path)
+        && !is_non_production_review_context(path)
+        && let Some(line) = nearby_sequential_await_line(content)
+    {
+        findings.push(finding("AP-ASYNC-001", "Likely sequential independent awaits", "async", "warning", "REVIEW", path, line, "Multiple awaits may be independent; verify dependency order and consider bounded parallelism.", "https://vercel.com/blog/introducing-react-best-practices"));
     }
     findings
 }
@@ -1141,7 +1146,7 @@ fn finding(
         file: file.into(),
         line,
         message: message.into(),
-        file_class: if is_test_file(file, "") {
+        file_class: if is_test_path(file) {
             "test".into()
         } else {
             "production".into()
@@ -1154,26 +1159,6 @@ fn is_js(path: &str) -> bool {
         .iter()
         .any(|e| path.ends_with(e))
 }
-fn is_test_file(path: &str, content: &str) -> bool {
-    let lower = path.to_ascii_lowercase();
-    [
-        "test",
-        "tests",
-        "spec",
-        "specs",
-        "fixture",
-        "fixtures",
-        "example",
-        "examples",
-        "__tests__",
-        "mock",
-    ]
-    .iter()
-    .any(|part| lower.contains(part))
-        || content
-            .lines()
-            .any(|l| l.contains("#[cfg(test)]") || l.contains("#[test]"))
-}
 fn is_tooling(path: &str) -> bool {
     path.split('/')
         .any(|part| ["script", "scripts", "tools", "bin", "cli"].contains(&part))
@@ -1181,7 +1166,7 @@ fn is_tooling(path: &str) -> bool {
 
 fn is_non_production_review_context(path: &str) -> bool {
     let lower = path.to_ascii_lowercase();
-    is_test_file(path, "")
+    is_test_path(path)
         || is_tooling(path)
         || lower.split('/').any(|part| {
             matches!(part, "bench" | "benchmarks" | "example" | "examples")
@@ -1252,10 +1237,7 @@ fn is_hardcoded_secret_assignment(line: &str, lower: &str) -> bool {
         return false;
     }
     let value = right.trim();
-    if !is_non_empty_literal(value) || is_placeholder(lower) {
-        return false;
-    }
-    true
+    is_non_empty_literal(value) && !is_placeholder(lower)
 }
 
 fn nearby_sequential_await_line(content: &str) -> Option<usize> {
@@ -1320,7 +1302,7 @@ fn summary(files: usize, findings: &[Finding]) -> Summary {
     Summary {
         files,
         findings: findings.len(),
-        pass: 0,
+        pass: findings.iter().filter(|f| f.status == "PASS").count(),
         warn: findings.iter().filter(|f| f.status == "WARN").count(),
         review: findings.iter().filter(|f| f.status == "REVIEW").count(),
         fail: findings.iter().filter(|f| f.status == "FAIL").count(),
@@ -1328,38 +1310,83 @@ fn summary(files: usize, findings: &[Finding]) -> Summary {
 }
 
 fn detect(project: &Path) -> Detected {
-    let has = |name: &str| project.join(name).exists();
-    let typescript = has("tsconfig.json");
-    let mut profiles = vec!["default".to_string()];
-    if typescript {
-        profiles.push("typescript".into());
+    let has = |name: &str| project.join(name).is_file();
+    let package = fs::read(project.join("package.json"))
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+        .unwrap_or_default();
+    let dependency = |name: &str| {
+        [
+            "dependencies",
+            "devDependencies",
+            "peerDependencies",
+            "optionalDependencies",
+        ]
+        .iter()
+        .any(|section| {
+            package
+                .get(section)
+                .and_then(|value| value.get(name))
+                .is_some()
+        })
+    };
+    let config = |name: &str| {
+        ["ts", "js", "mts", "mjs", "cts", "cjs"]
+            .iter()
+            .any(|extension| has(&format!("{name}.config.{extension}")))
+    };
+    let rust = has("Cargo.toml");
+    let go = has("go.mod");
+    let dart = has("pubspec.yaml");
+    let java = has("pom.xml")
+        || has("build.gradle")
+        || has("build.gradle.kts")
+        || has_java_source(project);
+    let spring_boot = has_spring_boot(project);
+    let typescript = has("tsconfig.json") || dependency("typescript");
+    let react = dependency("react") || dependency("react-dom");
+    let astro = dependency("astro") || config("astro");
+    let svelte = dependency("svelte") || dependency("@sveltejs/kit") || config("svelte");
+    let nestjs = dependency("@nestjs/core");
+    let next = dependency("next") || config("next");
+    let vite = dependency("vite") || config("vite");
+    let mut profiles = vec!["default".into()];
+    for (name, present) in [
+        ("rust", rust),
+        ("go", go),
+        ("dart", dart),
+        ("java", java),
+        ("spring-boot", spring_boot),
+        ("typescript", typescript),
+        ("react", react),
+        ("astro", astro),
+        ("svelte", svelte),
+        ("nestjs", nestjs),
+        ("next", next),
+        ("vite", vite),
+    ] {
+        if present {
+            profiles.push(name.into());
+        }
     }
-    if has("vite.config.ts") || has("vite.config.js") {
+    if typescript || react || astro || svelte || next || vite {
         profiles.push("web".into());
     }
     Detected {
-        rust: has("Cargo.toml"),
-        go: has("go.mod"),
-        dart: has("pubspec.yaml"),
-        java: has_java_source(project),
-        spring_boot: has_spring_boot(project),
+        rust,
+        go,
+        dart,
+        java,
+        spring_boot,
         typescript,
-        react: false,
-        astro: false,
-        svelte: false,
-        nestjs: false,
-        next: false,
-        vite: has("vite.config.ts") || has("vite.config.js"),
+        react,
+        astro,
+        svelte,
+        nestjs,
+        next,
+        vite,
         workspace_packages: Vec::new(),
-        profiles: {
-            if has_java_source(project) {
-                profiles.push("java".into());
-            }
-            if has_spring_boot(project) {
-                profiles.push("spring-boot".into());
-            }
-            profiles
-        },
+        profiles,
     }
 }
 fn native_tools(project: &Path) -> Vec<ToolResult> {
@@ -1421,13 +1448,17 @@ fn has_spring_boot(project: &Path) -> bool {
         .join("pom.xml")
         .to_str()
         .and_then(|path| fs::read_to_string(path).ok())
-        .is_some_and(|text| text.contains("spring-boot"))
+        .is_some_and(|text| {
+            text.contains("spring-boot") || text.contains("org.springframework.boot")
+        })
         || ["build.gradle", "build.gradle.kts"].iter().any(|name| {
             project
                 .join(name)
                 .to_str()
                 .and_then(|path| fs::read_to_string(path).ok())
-                .is_some_and(|text| text.contains("spring-boot"))
+                .is_some_and(|text| {
+                    text.contains("spring-boot") || text.contains("org.springframework.boot")
+                })
         })
         || WalkDir::new(project)
             .into_iter()
@@ -1693,7 +1724,7 @@ mod tests {
         let findings = custom_findings(
             &[("src/main/java/App.java".into(), "class App { void run(Exception error) { System.out.println(\"started\"); error.printStackTrace(); logger.info(\"started\"); } }".into())],
             &load_builtin_checks(),
-            &Detected { rust: false, go: false, dart: false, java: true, spring_boot: false, typescript: false, react: false, astro: false, svelte: false, nestjs: false, next: false, vite: false, workspace_packages: vec![], profiles: vec!["java".into()] },
+            &["java".into()],
         );
         assert!(findings.iter().any(|f| f.id == "AP-LOG-003"));
         assert!(findings.iter().any(|f| f.id == "AP-LOG-004"));
@@ -1708,22 +1739,7 @@ mod tests {
                 "class AppTest { void test() { System.out.println(\"fixture\"); } }".into(),
             )],
             &load_builtin_checks(),
-            &Detected {
-                rust: false,
-                go: false,
-                dart: false,
-                java: true,
-                spring_boot: false,
-                typescript: false,
-                react: false,
-                astro: false,
-                svelte: false,
-                nestjs: false,
-                next: false,
-                vite: false,
-                workspace_packages: vec![],
-                profiles: vec!["java".into()],
-            },
+            &["java".into()],
         );
         assert!(!findings.iter().any(|f| f.id == "AP-LOG-003"));
     }
@@ -1944,7 +1960,7 @@ mod tests {
             ),
             ("src/Main.ts".into(), "java.util.Date".into()),
         ];
-        let findings = custom_findings(&files, &[check], &detected);
+        let findings = custom_findings(&files, &[check], &detected.profiles);
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, "WARN");
     }

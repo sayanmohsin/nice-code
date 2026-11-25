@@ -19,3 +19,5 @@ checks in `--ci` mode.
 The engine is normally used through the Node-compatible launcher. Tagged GitHub Releases
 build verified binaries for supported platforms; npm distribution is deferred
 until that binary contract is stable.
+
+Building the engine requires Rust 1.90 or newer. The published launcher still requires only Node.js 20 or newer.

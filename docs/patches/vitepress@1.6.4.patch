@@ -1,0 +1,24 @@
+diff --git a/dist/node/chunk-D3CUZ4fa.js b/dist/node/chunk-D3CUZ4fa.js
+index fcc35e8af6f0178bd475a90d3e51efdb0d80d2c5..5565c03e030b46e90c49e63eaee68b697415ba00 100644
+--- a/dist/node/chunk-D3CUZ4fa.js
++++ b/dist/node/chunk-D3CUZ4fa.js
+@@ -45110,15 +45110,11 @@ async function createVitePressPlugin(siteConfig, ssr = false, pageToHashMap, cli
+           if (isPageChunk(chunk)) {
+             const hash = chunk.fileName.match(hashRE)[1];
+             pageToHashMap[chunk.name.toLowerCase()] = hash;
+-            bundle[name + "-lean"] = {
+-              ...chunk,
++            this.emitFile({
++              type: "asset",
+               fileName: chunk.fileName.replace(/\.js$/, ".lean.js"),
+-              preliminaryFileName: chunk.preliminaryFileName.replace(
+-                /\.js$/,
+-                ".lean.js"
+-              ),
+-              code: chunk.code.replace(staticStripRE, `""`)
+-            };
++              source: chunk.code.replace(staticStripRE, `""`)
++            });
+             chunk.code = chunk.code.replace(staticRestoreRE, "");
+           }
+         }

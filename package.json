@@ -19,7 +19,7 @@
     "guardrails"
   ],
   "type": "module",
-  "packageManager": "pnpm@12.4.1",
+  "packageManager": "pnpm@12.23.0",
   "engines": {
     "node": ">=20"
   },
@@ -54,10 +54,10 @@
     "knowledge:outdated": "node scripts/knowledge.mjs outdated",
     "knowledge:list": "node scripts/knowledge.mjs list",
     "rules": "node scripts/rules.mjs",
-    "check:contributor": "cargo fmt --manifest-path engine/Cargo.toml -- --check && npm run knowledge:check && npm run skills:check && npm run check:docs && npm run check:version && bun scripts/test-engine.ts && npm test && npm run pack:check && git diff --check",
+    "check:contributor": "cargo fmt --manifest-path engine/Cargo.toml -- --check && npm run knowledge:check && npm run skills:check && npm run check:docs && npm run check:version && npm test && npm run pack:check && git diff --check",
     "hooks:install": "node scripts/pre-commit.mjs --install",
     "precommit": "node scripts/pre-commit.mjs",
-    "test": "cargo test --manifest-path engine/Cargo.toml && node --test scripts/project.test.mjs scripts/knowledge.test.mjs scripts/package.test.mjs scripts/rules.test.mjs",
+    "test": "cargo test --manifest-path engine/Cargo.toml && cargo build --manifest-path engine/Cargo.toml && npm run test:node",
     "test:bun": "bun scripts/test-engine.ts",
     "check:docs": "bun scripts/check-docs.mts",
     "check:version": "bun scripts/check-version.mts",
@@ -69,6 +69,7 @@
     "engine:check": "node scripts/nice-code.mjs --project . --changed",
     "docs:dev": "pnpm --dir docs dev",
     "docs:build": "pnpm --dir docs build",
-    "docs:format:check": "pnpm --dir docs format:check"
+    "docs:format:check": "pnpm --dir docs format:check",
+    "test:node": "node --test scripts/project.test.mjs scripts/knowledge.test.mjs scripts/package.test.mjs scripts/rules.test.mjs scripts/engine.test.mjs"
   }
 }

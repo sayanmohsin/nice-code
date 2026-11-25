@@ -1,0 +1,21 @@
+[
+  { "name": "no ecosystem", "files": {}, "ecosystems": [] },
+  { "name": "Rust", "files": { "Cargo.toml": "[workspace]\n" }, "ecosystems": ["rust"] },
+  { "name": "Go", "files": { "go.mod": "module demo\n" }, "ecosystems": ["go"] },
+  { "name": "Dart", "files": { "pubspec.yaml": "name: demo\n" }, "ecosystems": ["dart"] },
+  { "name": "Java manifest", "files": { "pom.xml": "<project/>" }, "ecosystems": ["java"] },
+  { "name": "Spring Boot", "files": { "build.gradle.kts": "plugins { id(\"org.springframework.boot\") }" }, "ecosystems": ["java", "spring-boot"] },
+  { "name": "Spring source", "files": { "src/App.java": "import org.springframework.boot.SpringApplication;" }, "ecosystems": ["java", "spring-boot"] },
+  { "name": "TypeScript manifest", "files": { "package.json": "{\"devDependencies\":{\"typescript\":\"*\"}}" }, "ecosystems": ["typescript"] },
+  { "name": "React peer", "files": { "package.json": "{\"peerDependencies\":{\"react\":\"*\"}}" }, "ecosystems": ["react"] },
+  { "name": "Astro config", "files": { "astro.config.mjs": "export default {};" }, "ecosystems": ["astro"] },
+  { "name": "Svelte config", "files": { "svelte.config.js": "export default {};" }, "ecosystems": ["svelte"] },
+  { "name": "NestJS", "files": { "package.json": "{\"dependencies\":{\"@nestjs/core\":\"*\"}}" }, "ecosystems": ["nestjs"] },
+  { "name": "Next config", "files": { "next.config.ts": "export default {};" }, "ecosystems": ["next"] },
+  { "name": "Vite config", "files": { "vite.config.mts": "export default {};" }, "ecosystems": ["vite"] },
+  { "name": "Svelte Kit", "files": { "package.json": "{\"dependencies\":{\"@sveltejs/kit\":\"*\"}}" }, "ecosystems": ["svelte"] },
+  { "name": "optional framework", "files": { "package.json": "{\"optionalDependencies\":{\"next\":\"*\"}}" }, "ecosystems": ["next"] },
+  { "name": "dependency names in scripts", "files": { "package.json": "{\"scripts\":{\"test\":\"react next vite\"}}" }, "ecosystems": [] },
+  { "name": "ignored Java dependency", "files": { "node_modules/example/App.java": "@SpringBootApplication class App {}" }, "ecosystems": [] },
+  { "name": "polyglot", "files": { "Cargo.toml": "[workspace]\n", "go.mod": "module demo\n", "pubspec.yaml": "name: demo\n", "tsconfig.json": "{}", "package.json": "{\"dependencies\":{\"react\":\"*\",\"vite\":\"*\"}}" }, "ecosystems": ["rust", "go", "dart", "typescript", "react", "vite"] }
+]

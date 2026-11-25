@@ -41,7 +41,9 @@ function parseMarkdown(content) {
     const [key, ...rest] = line.split(":");
     const name = { matcher_type: "matcherType", applies_to: "appliesTo", include_tests: "includeTests" }[key.trim()] ?? key.trim();
     const value = parsed(rest.join(":"));
-    current[name] = ["extensions", "appliesTo"].includes(name) ? (Array.isArray(value) ? value : [value]) : value;
+    current[name] = name === "includeTests" && ["true", "false"].includes(value)
+      ? value === "true"
+      : ["extensions", "appliesTo"].includes(name) ? (Array.isArray(value) ? value : [value]) : value;
   }
   if (current) checks.push(current);
   return checks;
@@ -59,6 +61,7 @@ function validate(checks, source) {
     if (!["review", "warning", "critical", "fail"].includes(String(check.status).toLowerCase())) throw new Error(`${source}: ${check.id} has unsupported status`);
     if (String(check.matcherType).toLowerCase() === "regex") try { new RegExp(check.matcher); } catch { throw new Error(`${source}: ${check.id} has an invalid regex`); }
     for (const field of ["extensions", "appliesTo"]) if (!Array.isArray(check[field])) throw new Error(`${source}: ${check.id} ${field} must be a list`);
+    if (typeof check.includeTests !== "boolean") throw new Error(`${source}: ${check.id} includeTests must be a boolean`);
   }
 }
 function normalize(check) {

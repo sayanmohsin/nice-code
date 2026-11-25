@@ -15,6 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -24,7 +29,9 @@ jobs:
       - run: cargo fmt --manifest-path engine/Cargo.toml -- --check
       - run: cargo test --manifest-path engine/Cargo.toml
       - run: cargo clippy --manifest-path engine/Cargo.toml --all-targets -- -D warnings
-      - run: bun scripts/test-engine.ts
+      - run: cargo build --manifest-path engine/Cargo.toml
+      - run: npm run test:node
+      - run: node scripts/nice-code.mjs --ci --project . --format agent
       - run: node scripts/knowledge.mjs compile --check
       - run: node scripts/knowledge.mjs check
       - run: node scripts/knowledge.mjs outdated
@@ -40,6 +47,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -52,7 +64,9 @@ jobs:
       - run: cargo clippy --manifest-path engine/Cargo.toml --all-targets -- -D warnings
       - run: cargo doc --manifest-path engine/Cargo.toml --no-deps
       - run: cargo build --release --manifest-path engine/Cargo.toml
-      - run: bun scripts/test-engine.ts
+      - run: cargo build --manifest-path engine/Cargo.toml
+      - run: npm run test:node
+      - run: node scripts/nice-code.mjs --ci --project . --format agent
       - run: node scripts/knowledge.mjs compile --check
       - run: node scripts/knowledge.mjs check
       - run: node scripts/knowledge.mjs outdated
@@ -65,7 +79,55 @@ jobs:
       - run: npm audit --audit-level=high
       - uses: pnpm/action-setup@v6
         with:
-          version: 12.4.1
+          version: 12.23.0
       - run: pnpm --dir docs install --frozen-lockfile
       - run: pnpm --dir docs format:check
       - run: pnpm --dir docs build
+
+  minimum-versions:
+    name: Minimum supported Node and Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20.0.0
+      - uses: dtolnay/rust-toolchain@1.90.0
+      - run: cargo test --locked --manifest-path engine/Cargo.toml
+      - run: cargo build --locked --manifest-path engine/Cargo.toml
+      - run: npm run test:node
+
+  platform-builds:
+    name: Build ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - target: x86_64-apple-darwin
+            runner: macos-14
+          - target: aarch64-apple-darwin
+            runner: macos-14
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: taiki-e/install-action@v2
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        with:
+          tool: cross
+      - name: Build release binary
+        shell: bash
+        run: |
+          if [[ "${{ matrix.target }}" == aarch64-unknown-linux-gnu ]]; then
+            cross build --locked --release --manifest-path engine/Cargo.toml --target "${{ matrix.target }}"
+          else
+            cargo build --locked --release --manifest-path engine/Cargo.toml --target "${{ matrix.target }}"
+          fi

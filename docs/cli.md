@@ -34,6 +34,9 @@ nice-code --changed --format agent --project .
 # Run native project tools and emit SARIF for CI
 nice-code --changed --ci --format sarif --project . > nice-code.sarif
 
+# Override automatic CI selection with an exact comparison commit
+nice-code --ci --base <available-commit> --project .
+
 # Inspect one check and write a baseline
 nice-code --explain AP-LOG-001
 nice-code --all --format json --write-baseline .nice-code-baseline.json
@@ -84,5 +87,7 @@ The default human view uses a small `◆ nice-code` mark and status summary. Use
 to JSON or SARIF output. Useful controls include `--status FAIL,WARN`,
 `--include-review`, `--max-findings 20`, `--timings`, and baseline filtering.
 
-The CLI returns a non-zero exit code only when the report's exit decision is
-blocked. Unknown or invalid flags fail with a usage error.
+Exit status is `0` for a successful or advisory scan, `1` for blocked changes, and `2` for setup or
+usage errors. In GitHub Actions, `--ci` automatically compares PR or push commits; fetch history
+with `fetch-depth: 0`. Use `--base` to override the comparison. See [CI](/ci) for supported events
+and missing-history recovery.

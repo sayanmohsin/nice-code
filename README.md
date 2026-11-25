@@ -136,7 +136,8 @@ nice-code --version
 | ------------------------ | ------------------------------------------------------- |
 | `--changed`              | Fast default for local development and commits          |
 | `--all`                  | Explicit deeper scan of supported source files          |
-| `--ci`                   | Changed-file scan plus available native project tools   |
+| `--ci`                   | Compare committed CI changes and run native tools      |
+| `--base REVISION`        | Override CI detection with an exact comparison commit  |
 | `--json`                 | Machine-readable report for CI artifacts and metrics    |
 | `--format agent`         | Compact, line-oriented findings for coding agents       |
 | `--agent`                | Alias for `--format agent`                              |
@@ -184,7 +185,7 @@ bun scripts/test-engine.ts
 nice-code --project . --all
 ```
 
-The Rust engine can also be run directly during development:
+The Rust engine requires Rust 1.90 or newer to build and can also be run directly during development:
 
 ```bash
 cargo test --manifest-path engine/Cargo.toml
@@ -207,6 +208,12 @@ end-to-end improvement.
 `--changed` reads the target Git diff against `HEAD` and includes untracked files. A clean project
 therefore produces a report with zero scanned files. `--all` is opt-in so routine work does not
 scan an entire repository unnecessarily.
+
+In GitHub Actions, `--ci` automatically compares PR or branch-push commits, including on a clean
+checkout. Configure `actions/checkout` with `fetch-depth: 0`. Use `--base <commit>` to override the
+comparison or to run on another CI service. Missing history or event context is a setup error
+(exit 2), with recovery instructions; it never silently becomes a clean or full scan. See
+[`docs/ci.md`](docs/ci.md) for the comparison rules and scheduled scans.
 
 Initialize an explicit project configuration without overwriting an existing one:
 
@@ -306,9 +313,12 @@ Add a project script that points to the checked-out Nice Code repository:
 }
 ```
 
-For CI, use the checker as a repository step after installing the project’s own dependencies:
+For CI, fetch the comparison history and use the checker after installing the project’s own dependencies:
 
 ```yaml
+- uses: actions/checkout@v7
+  with:
+    fetch-depth: 0
 - name: Run Nice Code
   run: nice-code --project . --ci
 ```

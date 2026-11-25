@@ -3,8 +3,9 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(new URL("..", import.meta.url).pathname);
+const root = fileURLToPath(new URL("..", import.meta.url));
 const registry = JSON.parse(await readFile(join(root, "skills", "registry.json"), "utf8"));
 
 function value(args, name, fallback) {
@@ -19,7 +20,8 @@ function project(args) {
 function detect(projectRoot) {
   const has = (name) => existsSync(join(projectRoot, name));
   const packageJson = has("package.json") ? JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf8")) : {};
-  const dependencies = { ...(packageJson.dependencies ?? {}), ...(packageJson.devDependencies ?? {}) };
+  const dependencies = { ...(packageJson.dependencies ?? {}), ...(packageJson.devDependencies ?? {}), ...(packageJson.peerDependencies ?? {}), ...(packageJson.optionalDependencies ?? {}) };
+  const config = (name) => ["ts", "js", "mts", "mjs", "cts", "cjs"].some((extension) => has(`${name}.config.${extension}`));
   const ecosystems = [];
   if (has("Cargo.toml")) ecosystems.push("rust");
   if (has("go.mod")) ecosystems.push("go");
@@ -30,10 +32,12 @@ function detect(projectRoot) {
   if (springBoot) ecosystems.push("spring-boot");
   if (has("tsconfig.json") || dependencies.typescript) ecosystems.push("typescript");
   if (dependencies.react || dependencies["react-dom"]) ecosystems.push("react");
-  if (has("astro.config.ts") || has("astro.config.mjs") || dependencies.astro) ecosystems.push("astro");
-  if (dependencies.svelte || dependencies["@sveltejs/kit"]) ecosystems.push("svelte");
-  if (has("vite.config.ts") || has("vite.config.js") || dependencies.vite) ecosystems.push("vite");
-  const web = ecosystems.some((entry) => ["typescript", "react", "astro", "svelte", "vite"].includes(entry));
+  if (config("astro") || dependencies.astro) ecosystems.push("astro");
+  if (dependencies.svelte || dependencies["@sveltejs/kit"] || config("svelte")) ecosystems.push("svelte");
+  if (dependencies["@nestjs/core"]) ecosystems.push("nestjs");
+  if (dependencies.next || config("next")) ecosystems.push("next");
+  if (config("vite") || dependencies.vite) ecosystems.push("vite");
+  const web = ecosystems.some((entry) => ["typescript", "react", "astro", "svelte", "next", "vite"].includes(entry));
   const files = [".nice-code.json", "DESIGN.md", "AGENTS.md", "SKILL.md", ".nice-code/skills.lock.json"];
   const existing = files.filter((file) => has(file));
   const recommendedSkills = registry.skills.filter((skill) => !skill.deprecated && skill.primary && (skill.ecosystems.length === 0 || skill.ecosystems.some((entry) => ecosystems.includes(entry))));
@@ -47,15 +51,15 @@ function hasJavaSource(projectRoot) {
 function readdirRecursive(rootPath) {
   const entries = readdirSync(rootPath, { withFileTypes: true });
   return entries.flatMap((entry) => {
-    if ([".git", "node_modules", "target", "build", "dist"].includes(entry.name)) return [];
+    if ([".git", "node_modules", "target", "build", "dist", ".dart_tool", ".next"].includes(entry.name)) return [];
     const path = join(rootPath, entry.name);
     return entry.isDirectory() ? readdirRecursive(path) : [path];
   });
 }
 
 function isSpringBoot(projectRoot) {
-  return ["pom.xml", "build.gradle", "build.gradle.kts"].some((name) => existsSync(join(projectRoot, name)) && readFileSync(join(projectRoot, name), "utf8").includes("spring-boot"))
-    || readdirRecursive(projectRoot).filter((file) => file.endsWith(".java")).some((file) => readFileSync(file, "utf8").includes("@SpringBootApplication"));
+  return ["pom.xml", "build.gradle", "build.gradle.kts"].some((name) => existsSync(join(projectRoot, name)) && /spring-boot|org\.springframework\.boot/.test(readFileSync(join(projectRoot, name), "utf8")))
+    || readdirRecursive(projectRoot).filter((file) => file.endsWith(".java")).some((file) => readFileSync(file, "utf8").match(/@SpringBootApplication|org\.springframework\.boot/));
 }
 
 function report(projectRoot, detected) {
@@ -79,7 +83,7 @@ function print(reportData) {
 }
 
 function filesFor(projectRoot, detected) {
-  const profiles = ["default", ...detected.ecosystems];
+  const profiles = ["default", ...detected.ecosystems, ...(detected.web ? ["web"] : [])];
   const skills = detected.recommendedSkills.map(({ id, version, source, revision }) => ({ id, version, source, revision }));
   const design = `# Design direction\n\nDocument this project's visual language, typography, spacing, color, component primitives, responsive behavior, and intentional exceptions here.\n\nNice Code can review implementation patterns, but rendered browser feedback is still required for visual quality.\n`;
   const agents = `## Nice Code\n\nUse the project's DESIGN.md for product-specific UI decisions. Run \`nice-code advise --project .\` when adding a new surface and \`nice-code --changed --project .\` before handoff.\n`;
