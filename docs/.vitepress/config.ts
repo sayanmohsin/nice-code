@@ -9,17 +9,21 @@ export default defineConfig({
   cleanUrls: true,
   head: [
     ["link", { rel: "icon", href: "/nice-code/favicon.svg" }],
-    ["meta", { name: "theme-color", content: "#f4efe6" }],
+    ["meta", { name: "theme-color", content: "#faf8f4" }],
   ],
   themeConfig: {
-    logo: "/logo-wordmark.svg",
+    logo: {
+      light: "/logo-wordmark.svg",
+      dark: "/logo-wordmark-dark.svg",
+      alt: "Nice Code",
+    },
     siteTitle: false,
     nav: [
-      { text: "Start here", link: "/getting-started" },
-      { text: "Concepts", link: "/architecture" },
-      { text: "Guides", link: "/cli" },
-      { text: "Operations", link: "/ci" },
-      { text: "Reference", link: "/patterns" },
+      { text: "Get started", link: "/getting-started" },
+      { text: "CLI", link: "/cli" },
+      { text: "Patterns", link: "/patterns" },
+      { text: "CI", link: "/ci" },
+      { text: "Sources", link: "/sources" },
     ],
     sidebar: {
       "/": [
@@ -79,11 +83,16 @@ export default defineConfig({
       ],
     },
     search: { provider: "local" },
+    editLink: {
+      pattern: "https://github.com/sayanmohsin/nice-code/edit/main/docs/:path",
+      text: "Improve this page on GitHub",
+    },
+    outline: { level: [2, 3], label: "On this page" },
     socialLinks: [
       { icon: "github", link: "https://github.com/sayanmohsin/nice-code" },
     ],
     footer: {
-      message: "Source-backed guardrails · MIT License",
+      message: "A little more context. A more thoughtful review.",
       copyright: "© 2026 Nice Code contributors",
     },
   },
